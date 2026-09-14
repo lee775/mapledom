@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>MapleDom.Core</RootNamespace>
+    <AssemblyName>MapleDom.Core</AssemblyName>
+    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <Description>MapleDom timer engine: drift-free timers and serialized alarm dispatch. No UI dependencies.</Description>
+  </PropertyGroup>
+
+</Project>

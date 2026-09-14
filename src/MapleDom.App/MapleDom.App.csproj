@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>MapleDom.App</RootNamespace>
+    <AssemblyName>MapleDom</AssemblyName>
+    <AssemblyTitle>MapleDom</AssemblyTitle>
+    <Product>MapleDom</Product>
+    <ApplicationIcon>Assets/app.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="MapleDom.App.Smoke" />
+    <EmbeddedResource Include="Assets/app.ico" LogicalName="MapleDom.App.Assets.app.ico" />
+    <Using Remove="System.Drawing" />
+    <Using Remove="System.Windows.Forms" />
+    <ProjectReference Include="..\MapleDom.Core\MapleDom.Core.csproj" />
+    <ProjectReference Include="..\MapleDom.Windows\MapleDom.Windows.csproj" />
+  </ItemGroup>
+</Project>

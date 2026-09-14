@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MapleDom.App/MapleDom.App.csproj" />
+    <Project Path="src/MapleDom.Cli/MapleDom.Cli.csproj" />
+    <Project Path="src/MapleDom.Core/MapleDom.Core.csproj" />
+    <Project Path="src/MapleDom.Windows/MapleDom.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MapleDom.Core.Tests/MapleDom.Core.Tests.csproj" />
+  </Folder>
+</Solution>

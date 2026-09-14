@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
+    <RootNamespace>MapleDom.Cli</RootNamespace>
+    <AssemblyName>MapleDom.Cli</AssemblyName>
+    <AssemblyTitle>MapleDom</AssemblyTitle>
+    <ApplicationIcon />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MapleDom.Core\MapleDom.Core.csproj" />
+    <ProjectReference Include="..\MapleDom.Windows\MapleDom.Windows.csproj" />
+  </ItemGroup>
+
+</Project>
