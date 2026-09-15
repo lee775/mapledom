@@ -27,19 +27,20 @@ UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참�
 ```
 MapleDom.slnx
 src/
-  MapleDom.App/         한국어 WPF UI, 설정, 트레이, 전역 단축키 (외부 패키지 추가 없음)
+  MapleDom.App/         한국어 WPF UI, 설정, 트레이, 전역 단축키, 창 순서 탭 (외부 패키지 추가 없음)
   MapleDom.Core/        타이머 엔진, 설정, 알림 큐 (UI/Windows 의존 없음, net10.0)
     Time/Clock.cs         IClock, MonotonicClock
     Timers/               RepeatTimer(동꼽방지), AckTimer(룬/도핑), TimerSnapshot, AlarmEvent
     Engine/TimerEngine.cs 스케줄러 스레드
     Notifications/        IAlarmNotifier, NotificationDispatcher(직렬화 큐)
     Settings/             AppSettings(JSON), SettingsStore
+    WindowOrder/          창 순서 항목 ↔ 실행 중인 창 매칭(순수 로직)
     Text/                 DurationFormat("14:59", "29분 55초"), AlarmTemplate
     TimerService.cs       UI가 쓰는 단일 진입점
-  MapleDom.Windows/     WindowsToastNotifier (Microsoft.Toolkit.Uwp.Notifications)
+  MapleDom.Windows/     WindowsToastNotifier(토스트), WindowArranger/ForegroundWatcher/WindowOrderController(창 순서, Win32)
   MapleDom.Cli/         콘솔 검증 도구
 tests/
-  MapleDom.Core.Tests/  xunit 80개
+  MapleDom.Core.Tests/  xunit 89개
 docs/
   UI_PROMPT.md          Codex에게 줄 UI 구현 프롬프트
   UI_NOTES.md           UI 사용법, 구현 결정, 검증 결과
@@ -73,7 +74,7 @@ publish.cmd
 
 `dist\MapleDom.exe`(약 170MB, 런타임 포함) 하나만 다른 PC에 복사해서 실행하면 된다(Windows 10 1809 이상, x64). 단일 파일 압축과 ReadyToRun은 일부러 끈 상태다: 압축을 켜면 크기는 88MB로 줄지만 실행 중 메모리가 약 120MB 더 들고, ReadyToRun은 크기만 늘리고 시작이 오히려 느렸다. 첫 실행 때 `%TEMP%\.net\MapleDom` 에 네이티브 라이브러리를 풀어 두므로 첫 시작만 1~2초 느릴 수 있다. 설정 파일 위치는 같다(`%LocalAppData%\MapleDom`).
 기본적으로 X를 누르면 트레이에 숨겨지고, 트레이 메뉴의 **종료**로 앱을 끝낸다.
-설정의 **알림 · 창** 탭에서 투명도, 항상 위, 트레이 숨기기, 전역 단축키를 바꿀 수 있다.
+설정의 **알림 · 창** 탭에서 투명도, 항상 위, 트레이 숨기기, 전역 단축키를 바꿀 수 있고, **창 순서** 탭에서 창 Z-order 고정을 설정한다.
 
 UI 추가 검증(앱을 종료한 상태에서 실행):
 
@@ -91,6 +92,19 @@ dotnet run --project src/MapleDom.Cli -c Release -- --run 60 --silent   # 60초 
 ```
 
 대화형 키: `1/2/3` 각 타이머 토글, `r` 룬 깟음, `d` 도핑했음, `a` 전체 시작, `s` 전체 정지, `m` 음소거, `t` 테스트 알림, `q` 종료.
+
+## 창 순서 고정 (Z-order)
+
+설정 > **창 순서** 탭. 실행 중인 창을 골라 위(앞)→아래(뒤) 순서를 정해 두면 그 순서로 창을 쌓는다.
+키 입력을 받는 창(활성 창)은 건드리지 않으므로, 예를 들어 게임 창을 조작하면서도 다른 창을 그 앞에 둘 수 있다.
+
+- **지금 정렬** 버튼 또는 전역 단축키 **Ctrl+Alt+Z**: 목록 순서로 정렬(그룹을 맨 앞으로).
+- **Ctrl+Alt+X**: 지금 활성인 창을 맨 앞으로 올린다(잠깐 보기). 다음에 목록의 창을 활성화하면 다시 원래 순서로.
+- **창 순서 고정 사용**: 목록에 있는 창이 활성화될 때마다 0.15초 뒤 자동으로 순서를 되돌린다. 목록에 없는 창(브라우저 등)을 활성화할 때는 아무것도 하지 않는다.
+- **항상 위 층에 배치**: 목록의 창을 모두 '항상 위'로 만들어 그 층 안에서 정렬한다. 끄면 각 창이 있던 층(일반/항상 위) 안에서만 순서가 바뀐다.
+- 항목은 프로세스 이름(exe 이름) + 제목 포함 문자열로 창을 찾는다. 제목이 자주 바뀌는 창(브라우저 탭 등)은 제목 칸을 비우거나 짧게 줄인다.
+- 전체화면(독점) 게임 창은 Z-order를 무시한다. 창 모드/테두리 없는 창 모드에서 쓴다.
+- 구현: `MapleDom.Core.WindowOrder`(매칭, 순수 로직) + `MapleDom.Windows.WindowArranger`(`SetWindowPos`, `SWP_NOACTIVATE`) + `WindowOrderController`(`SetWinEventHook` 포그라운드 감시).
 
 ## 앱 아이콘
 

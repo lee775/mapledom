@@ -15,6 +15,7 @@ public partial class App : Application
     private MainViewModel? _viewModel;
     private MainWindow? _window;
     private TrayIcon? _tray;
+    private WindowOrderController? _windowOrder;
     private bool _exiting;
     private bool _handlingException;
 
@@ -46,6 +47,9 @@ public partial class App : Application
             _service = new TimerService(AppSettings.CreateDefault(), new WindowsToastNotifier());
         }
         _viewModel = new MainViewModel(_service, uiSettings, Dispatcher);
+        _windowOrder = new WindowOrderController();
+        _viewModel.WindowOrder = _windowOrder;
+        _windowOrder.Update(_service.Settings.WindowOrder);
         if (settingsError is not null) { ErrorLog.Write(settingsError); _viewModel.ShowWarning("타이머 설정을 읽지 못해 기본값을 사용합니다"); }
         if (uiError is not null) { ErrorLog.Write(uiError); _viewModel.ShowWarning("창 설정을 읽지 못해 기본값을 사용합니다"); }
         _window = new MainWindow(_service, _viewModel, ExitApplication);
@@ -78,6 +82,7 @@ public partial class App : Application
         finally
         {
             _tray?.Dispose();
+            _windowOrder?.Dispose();
             _viewModel?.Dispose();
             _service?.Dispose();
             _instance?.Dispose();

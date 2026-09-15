@@ -113,6 +113,7 @@ public sealed class SettingsViewModel : ObservableObject
     private TimerSettingsEditor _dongkkop = null!;
     private TimerSettingsEditor _rune = null!;
     private TimerSettingsEditor _doping = null!;
+    private WindowOrderEditor _windowOrder = null!;
     private bool _notificationsEnabled;
     private string _minSpacing = "";
     private bool _topmost;
@@ -133,6 +134,7 @@ public sealed class SettingsViewModel : ObservableObject
     public TimerSettingsEditor Dongkkop { get => _dongkkop; private set => Set(ref _dongkkop, value); }
     public TimerSettingsEditor Rune { get => _rune; private set => Set(ref _rune, value); }
     public TimerSettingsEditor Doping { get => _doping; private set => Set(ref _doping, value); }
+    public WindowOrderEditor WindowOrder { get => _windowOrder; private set => Set(ref _windowOrder, value); }
     public bool NotificationsEnabled { get => _notificationsEnabled; set => Set(ref _notificationsEnabled, value); }
     public string MinSpacing { get => _minSpacing; set => Set(ref _minSpacing, value); }
     public bool Topmost { get => _topmost; set => Set(ref _topmost, value); }
@@ -148,6 +150,7 @@ public sealed class SettingsViewModel : ObservableObject
         Dongkkop = TimerSettingsEditor.From(settings.Dongkkop);
         Rune = TimerSettingsEditor.From(settings.Rune);
         Doping = TimerSettingsEditor.From(settings.Doping);
+        WindowOrder = WindowOrderEditor.From(settings.WindowOrder);
         NotificationsEnabled = settings.Notifications.Enabled;
         MinSpacing = TimerSettingsEditor.Format(settings.Notifications.MinSpacingSeconds);
         Topmost = uiSettings.Topmost;
@@ -175,6 +178,7 @@ public sealed class SettingsViewModel : ObservableObject
         settings.Doping = Doping.BuildAcknowledge(errors);
         settings.Notifications.Enabled = NotificationsEnabled;
         settings.Notifications.MinSpacingSeconds = TimerSettingsEditor.Number(MinSpacing, "알림 최소 간격", errors);
+        settings.WindowOrder = WindowOrder.Build();
         errors.AddRange(settings.Validate());
         foreach (var timer in new[] { settings.Rune, settings.Doping })
         {

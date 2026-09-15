@@ -65,6 +65,29 @@ public sealed class NotificationSettings
     public int MaxQueueLength { get; set; } = 16;
 }
 
+/// <summary>창 순서 고정 항목. 프로세스 이름(확장자 없이)과 제목 포함 문자열로 실행 중인 창을 찾는다. 둘 다 대소문자 무시.</summary>
+public sealed class WindowOrderEntry
+{
+    public string ProcessName { get; set; } = "";
+
+    /// <summary>창 제목에 포함되어야 하는 문자열. 비어 있으면 제목은 보지 않는다.</summary>
+    public string TitleContains { get; set; } = "";
+}
+
+/// <summary>창 순서 고정(Z-order) 설정. Windows 목록은 위(앞)에서 아래(뒤) 순서.</summary>
+public sealed class WindowOrderSettings
+{
+    public const int MaxEntries = 16;
+
+    /// <summary>true면 목록의 창이 활성화될 때마다 목록 순서를 다시 적용한다(활성 창은 그대로).</summary>
+    public bool Enabled { get; set; }
+
+    /// <summary>true면 목록의 창을 모두 "항상 위" 층에 놓고 그 안에서 정렬한다.</summary>
+    public bool Topmost { get; set; }
+
+    public List<WindowOrderEntry> Windows { get; set; } = new();
+}
+
 public sealed class AppSettings
 {
     public const int CurrentSchemaVersion = 1;
@@ -81,6 +104,8 @@ public sealed class AppSettings
 
     public NotificationSettings Notifications { get; set; } = new();
 
+    public WindowOrderSettings WindowOrder { get; set; } = new();
+
     public static AppSettings CreateDefault() => new();
 
     /// <summary>비어 있거나 0 이하인 값을 기본값으로 채운다(구버전 파일, 손편집 대비). 자기 자신을 돌려준다.</summary>
@@ -93,6 +118,15 @@ public sealed class AppSettings
         if (Notifications is null) Notifications = new NotificationSettings();
         if (!(Notifications.MinSpacingSeconds >= 0)) Notifications.MinSpacingSeconds = 2;
         if (Notifications.MaxQueueLength < 1) Notifications.MaxQueueLength = 16;
+
+        if (WindowOrder is null) WindowOrder = new WindowOrderSettings();
+        if (WindowOrder.Windows is null) WindowOrder.Windows = new List<WindowOrderEntry>();
+        WindowOrder.Windows.RemoveAll(e => e is null);
+        foreach (var entry in WindowOrder.Windows)
+        {
+            entry.ProcessName = (entry.ProcessName ?? "").Trim();
+            entry.TitleContains = (entry.TitleContains ?? "").Trim();
+        }
 
         SchemaVersion = CurrentSchemaVersion;
         return this;
@@ -108,6 +142,15 @@ public sealed class AppSettings
 
         if (!(Notifications.MinSpacingSeconds >= 0)) errors.Add("알림 최소 간격은 0 이상이어야 합니다.");
         if (Notifications.MaxQueueLength < 1) errors.Add("알림 큐 길이는 1 이상이어야 합니다.");
+
+        if (WindowOrder.Windows.Count > WindowOrderSettings.MaxEntries)
+            errors.Add($"창 순서: 창은 최대 {WindowOrderSettings.MaxEntries}개까지 넣을 수 있습니다.");
+        for (var i = 0; i < WindowOrder.Windows.Count; i++)
+        {
+            var entry = WindowOrder.Windows[i];
+            if (string.IsNullOrWhiteSpace(entry.ProcessName) && string.IsNullOrWhiteSpace(entry.TitleContains))
+                errors.Add($"창 순서 {i + 1}번: 프로세스 이름 또는 제목을 입력하세요.");
+        }
         return errors;
     }
 

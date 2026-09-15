@@ -76,3 +76,13 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 실제 앱 시작과 접근성 트리도 확인했다. 최초 유휴 샘플은 CPU 0%, 전용 작업 집합 약 46.3MiB였다. 전체 작업 집합은 공유 런타임을 포함해 약 135.5MiB였으며, 이 측정은 장시간 사용이나 게임 중 동작 성능 보증이 아니다.
 
 컴퓨터 UI 캡처는 `SetIsBorderRequired` / `0x80004002` 오류로 사용할 수 없었고, 이후 사용자의 물리적 Esc 입력으로 UI 자동화가 중단됐다. 따라서 트레이 더블클릭과 메뉴 클릭의 전체 흐름, 게임에 포커스를 둔 실제 단축키 입력, Windows 토스트의 화면 표시·사운드, 세션 로그오프, 다양한 DPI/모니터 조합은 실제 환경에서의 최종 확인이 남아 있다. 검증용 프로세스는 종료했고 남은 MapleDom 프로세스가 없는 것을 확인했다.
+
+## 창 순서 탭 (2026-09-15 추가, Claude)
+
+설정 창에 **창 순서** 탭이 추가됐다. 실행 중인 창을 콤보박스에서 골라 목록에 넣고 ▲▼로 순서를 정한다(위가 앞).
+- 체크: 창 순서 고정 사용(목록 창이 활성화되면 0.15초 뒤 자동 재정렬), 항상 위 층에 배치.
+- 버튼: 새로고침(창 목록·찾음/없음 상태 갱신), 추가, 지금 정렬(편집 중인 목록으로 즉시 정렬, 저장 안 함), 각 행의 ▲ ▼ 삭제.
+- 전역 단축키에 Ctrl+Alt+Z(정렬), Ctrl+Alt+X(활성 창 맨 앞으로)가 추가됐고, 트레이 메뉴에 "창 순서 정렬"이 생겼다.
+- 저장 시 `TimerService.ApplySettings` 다음에 `MainViewModel.WindowOrder`(`WindowOrderController`)에도 반영한다. 정렬이 적용되면 메인 창은 자신의 '항상 위'를 다시 세운다(`MainWindow.ReassertTopmost`).
+- 핵심 로직은 UI 밖에 있다: `MapleDom.Core.WindowOrder.WindowOrderResolver`(매칭, xunit), `MapleDom.Windows.WindowArranger`(SetWindowPos), `ForegroundWatcher`(SetWinEventHook), `WindowOrderController`.
+- 검증 도구에 창 순서 탭 검사 6개와 `settings-window-order.png` 렌더가 추가돼 총 44개다. 실제 창 3개(메모장)로 정렬·포커스 유지·자동 고정을 확인하는 별도 시험은 `README.md`의 창 순서 절 참고.

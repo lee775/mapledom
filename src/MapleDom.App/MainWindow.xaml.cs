@@ -7,6 +7,7 @@ using System.Windows.Media;
 using MapleDom.App.Infrastructure;
 using MapleDom.App.ViewModels;
 using MapleDom.Core;
+using MapleDom.Windows;
 
 namespace MapleDom.App;
 
@@ -29,8 +30,9 @@ public partial class MainWindow : Window
         IsVisibleChanged += (_, _) => viewModel.IsVisible = IsVisible;
         LocationChanged += (_, _) => SavePosition();
         viewModel.PropertyChanged += OnViewModelChanged;
+        viewModel.WindowOrderApplied += ReassertTopmost;
         Closing += OnClosing;
-        Closed += (_, _) => { _hotkeys?.Dispose(); viewModel.PropertyChanged -= OnViewModelChanged; };
+        Closed += (_, _) => { _hotkeys?.Dispose(); viewModel.PropertyChanged -= OnViewModelChanged; viewModel.WindowOrderApplied -= ReassertTopmost; };
         RestorePosition();
     }
 
@@ -56,6 +58,14 @@ public partial class MainWindow : Window
         WindowState = WindowState.Normal;
         Activate();
         if (_settingsWindow is { } settings) { settings.WindowState = WindowState.Normal; settings.Activate(); }
+    }
+
+    /// <summary>창 순서 정렬로 다른 창이 '항상 위' 층 맨 앞에 오면 이 창을 다시 그 위로 올린다.</summary>
+    public void ReassertTopmost()
+    {
+        if (_exiting || !IsVisible || !ViewModel.Topmost) return;
+        var handle = new WindowInteropHelper(this).Handle;
+        if (handle != 0) WindowArranger.SetTopmost(handle, true);
     }
 
     public void PrepareForExit()

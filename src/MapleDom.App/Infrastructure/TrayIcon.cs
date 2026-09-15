@@ -22,6 +22,7 @@ internal sealed class TrayIcon : IDisposable
         Add("전체 정지", viewModel.StopAll);
         Add("룬 깟음", () => viewModel.Acknowledge(TimerService.RuneId));
         Add("도핑했음", () => viewModel.Acknowledge(TimerService.DopingId));
+        Add("창 순서 정렬", viewModel.ArrangeWindows);
         _menu.Items.Add(new Forms.ToolStripSeparator());
         var mute = new Forms.ToolStripMenuItem("음소거", null, (_, _) => Invoke(() => viewModel.Muted = !viewModel.Muted));
         var topmost = new Forms.ToolStripMenuItem("항상 위", null, (_, _) => Invoke(() => viewModel.Topmost = !viewModel.Topmost));
