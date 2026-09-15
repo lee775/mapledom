@@ -180,7 +180,7 @@ public static class SettingsDefaults
             Sound = AlarmSound.Default,
             ReminderSound = AlarmSound.Default,
             Scenario = AlarmScenario.Default,
-            ExpireSeconds = 30,
+            ExpireSeconds = 10,
         },
     };
 
@@ -199,7 +199,7 @@ public static class SettingsDefaults
             Sound = AlarmSound.Reminder,
             ReminderSound = AlarmSound.Reminder,
             Scenario = AlarmScenario.Reminder,
-            ExpireSeconds = 120,
+            ExpireSeconds = 10,
         },
     };
 
@@ -218,7 +218,7 @@ public static class SettingsDefaults
             Sound = AlarmSound.Reminder,
             ReminderSound = AlarmSound.Reminder,
             Scenario = AlarmScenario.Reminder,
-            ExpireSeconds = 120,
+            ExpireSeconds = 10,
         },
     };
 }

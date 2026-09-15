@@ -111,7 +111,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 {
   "Dongkkop": { "Name": "동꼽방지", "IntervalSeconds": 58, "GapSeconds": 2, "AutoStart": false,
     "Notification": { "Title": "동꼽방지", "MainMessage": "움직이세요! ({interval} 경과)",
-      "Sound": "Default", "Scenario": "Default", "ExpireSeconds": 30 } },
+      "Sound": "Default", "Scenario": "Default", "ExpireSeconds": 10 } },
   "Rune":   { "Name": "룬",  "IntervalSeconds": 900,  "LeadSeconds": 0, "ReminderSeconds": 60, "AutoStart": false,
     "Notification": { "Title": "룬 타이머", "MainMessage": "룬 생성! 룬을 까고 [룬 깟음]을 누르세요.",
       "ReminderMessage": "룬 아직 안 깠어요! (+{overdue} 경과)", "Sound": "Reminder", "Scenario": "Reminder" } },
