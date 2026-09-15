@@ -28,7 +28,7 @@ public sealed class TimerCardViewModel : ObservableObject
     public bool IsRunning { get => _running; private set { if (Set(ref _running, value)) OnPropertyChanged(nameof(ToggleLabel)); } }
     public bool IsOverdue { get => _overdue; private set => Set(ref _overdue, value); }
     public bool IsUrgent { get => _urgent; private set => Set(ref _urgent, value); }
-    public bool CanAcknowledge => Id != TimerService.DongkkopId;
+    public bool CanAcknowledge => true;
     public string AcknowledgeLabel => Id == TimerService.RuneId ? "룬 깟음" : "도핑했음";
     public string ToggleLabel => IsRunning ? "정지" : "시작";
     public RelayCommand ToggleCommand { get; }

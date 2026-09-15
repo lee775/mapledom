@@ -31,12 +31,12 @@ public partial class SettingsWindow : Window
     private void OnRestoreDefaults(object sender, RoutedEventArgs args) => ViewModel.RestoreDefaults();
 
     private void OnTest(object sender, RoutedEventArgs args) =>
-        _main.SendTest(SettingsTabs.SelectedIndex switch { 0 => TimerService.DongkkopId, 2 => TimerService.DopingId, _ => TimerService.RuneId });
+        _main.SendTest(SettingsTabs.SelectedIndex == 1 ? TimerService.DopingId : TimerService.RuneId);
 
-    /// <summary>편집 중인 목록으로 바로 정렬해 본다(저장하지 않음). 정렬 뒤 이 창을 다시 앞으로 가져온다.</summary>
+    /// <summary>편집 중인 목록으로 한 번 정렬해 본다(저장·적용 상태 변경 없음). 정렬 뒤 이 창을 다시 앞으로 가져온다.</summary>
     private void OnArrangeNow(object sender, RoutedEventArgs args)
     {
-        var count = WindowArranger.Apply(ViewModel.WindowOrder.Build(), raise: true);
+        var count = WindowArranger.Apply(ViewModel.WindowOrder.Build());
         ViewModel.WindowOrder.RefreshWindows();
         ViewModel.SetErrors(count == 0
             ? ["창 순서: 정렬할 창을 찾지 못했습니다. 목록의 프로세스 이름과 제목을 확인하세요."]
@@ -57,7 +57,7 @@ public partial class SettingsWindow : Window
         try
         {
             _service.ApplySettings(settings);
-            _main.WindowOrder?.Update(settings.WindowOrder);
+            _main.WindowOrderKeeper?.Update(settings.WindowOrder);
             SettingsStore.Save(settings);
             settingsSaved = true;
             uiSettings.Save();
@@ -66,7 +66,7 @@ public partial class SettingsWindow : Window
         {
             ErrorLog.Write(error);
             _service.ApplySettings(previous);
-            _main.WindowOrder?.Update(previous.WindowOrder);
+            _main.WindowOrderKeeper?.Update(previous.WindowOrder);
             if (settingsSaved)
             {
                 try { SettingsStore.Save(previous); }

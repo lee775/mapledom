@@ -39,8 +39,8 @@ internal sealed class GlobalHotkeys : IDisposable
             case 1: _viewModel.Acknowledge(TimerService.RuneId); break;
             case 2: _viewModel.Acknowledge(TimerService.DopingId); break;
             case 3: _viewModel.ToggleAll(); break;
-            case 4: _viewModel.ArrangeWindows(); break;
-            case 5: _viewModel.RaiseActiveWindow(); break;
+            case 4: _viewModel.ToggleWindowOrder(); break;
+            case 5: _viewModel.PeekWindow(); break;
         }
         return 0;
     }

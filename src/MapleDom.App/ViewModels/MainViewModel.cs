@@ -13,18 +13,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly TimerService _service;
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _refreshTimer;
+    private readonly WindowOrderKeeper? _keeper;
     private bool _visible;
     private bool _disposed;
     private string _warning = "";
     private UiSettings _uiSettings;
-    private WindowOrderController? _windowOrder;
 
-    public MainViewModel(TimerService service, UiSettings uiSettings, Dispatcher dispatcher)
+    /// <param name="windowOrder">창 순서 키퍼. null이면 카드가 비활성으로만 표시된다(검증 도구).</param>
+    public MainViewModel(TimerService service, UiSettings uiSettings, Dispatcher dispatcher, WindowOrderKeeper? windowOrder = null)
     {
         _service = service;
         _uiSettings = uiSettings;
         _dispatcher = dispatcher;
+        _keeper = windowOrder;
         Cards = TimerService.TimerIds.Select(id => new TimerCardViewModel(id, Toggle, Acknowledge)).ToArray();
+        WindowOrder = new WindowOrderViewModel(windowOrder, Post);
         StartAllCommand = new RelayCommand(StartAll);
         StopAllCommand = new RelayCommand(StopAll);
         ToggleMuteCommand = new RelayCommand(() => Muted = !Muted);
@@ -35,10 +38,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         service.NotificationQueued += OnNotificationQueued;
         service.NotificationFailed += OnNotificationFailed;
         service.HandlerFailed += OnHandlerFailed;
+        if (windowOrder is not null)
+        {
+            windowOrder.Applied += OnWindowOrderApplied;
+            windowOrder.Failed += OnWindowOrderFailed;
+        }
         Refresh();
     }
 
     public IReadOnlyList<TimerCardViewModel> Cards { get; }
+    public WindowOrderViewModel WindowOrder { get; }
+    public WindowOrderKeeper? WindowOrderKeeper => _keeper;
     public ObservableCollection<string> RecentNotifications { get; } = [];
     public RelayCommand StartAllCommand { get; }
     public RelayCommand StopAllCommand { get; }
@@ -58,46 +68,17 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             OnPropertyChanged(nameof(MuteGlyph));
         }
     }
-    public string MuteGlyph => Muted ? "\uE74F" : "\uE767";
+    public string MuteGlyph => Muted ? "" : "";
     public bool Topmost
     {
         get => _uiSettings.Topmost;
         set { if (_uiSettings.Topmost == value) return; _uiSettings.Topmost = value; OnPropertyChanged(); }
     }
     public double Opacity => _uiSettings.Opacity;
-
-    /// <summary>창 순서 고정 기능. App이 시작할 때 넣어 준다. 없으면 관련 명령은 아무것도 하지 않는다.</summary>
-    public WindowOrderController? WindowOrder
-    {
-        get => _windowOrder;
-        set
-        {
-            if (_windowOrder is not null)
-            {
-                _windowOrder.Applied -= OnWindowOrderApplied;
-                _windowOrder.Failed -= OnWindowOrderFailed;
-            }
-            _windowOrder = value;
-            if (value is not null)
-            {
-                value.Applied += OnWindowOrderApplied;
-                value.Failed += OnWindowOrderFailed;
-            }
-        }
-    }
-
-    /// <summary>창 순서가 적용된 직후(UI 스레드). 메인 창이 자신의 '항상 위'를 다시 세우는 데 쓴다.</summary>
-    public event Action? WindowOrderApplied;
-
-    public void ArrangeWindows()
-    {
-        if (_windowOrder is null) return;
-        if (_windowOrder.ApplyNow() == 0)
-            ShowWarning("정렬할 창을 찾지 못했습니다. 설정 > 창 순서 목록을 확인하세요");
-    }
-
-    public void RaiseActiveWindow() => _windowOrder?.RaiseActiveWindow();
     public bool IsVisible { get => _visible; set { _visible = value; Refresh(); } }
+
+    /// <summary>창 순서가 실제로 적용된 직후(UI 스레드). 메인 창이 자신의 '항상 위'를 다시 세우는 데 쓴다.</summary>
+    public event Action? WindowOrderApplied;
 
     public void ApplyUiSettings(UiSettings settings)
     {
@@ -112,6 +93,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public void ToggleAll() { if (Cards.Any(card => card.IsRunning)) StopAll(); else StartAll(); }
     public void Toggle(string id) { _service.Toggle(id); Refresh(); }
     public void Acknowledge(string id) { _service.Acknowledge(id); Refresh(); }
+
+    /// <summary>창 순서 적용 ↔ 해제 (Ctrl+Alt+Z, 트레이, 카드 버튼).</summary>
+    public void ToggleWindowOrder()
+    {
+        if (_keeper is null) return;
+        if (!_keeper.HasWindows)
+        {
+            ShowWarning("설정 > 창 순서에서 창을 먼저 추가하세요");
+            return;
+        }
+        WindowOrder.Toggle();
+    }
+
+    /// <summary>지금 활성인 창을 맨 앞으로 (Ctrl+Alt+X).</summary>
+    public void PeekWindow() => WindowOrder.Peek();
 
     public void SendTest(string id)
     {
@@ -130,7 +126,8 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         if (_disposed) return;
         var snapshots = _service.Snapshot();
         for (var i = 0; i < Cards.Count; i++) Cards[i].Update(snapshots[i]);
-        _refreshTimer.IsEnabled = _visible && snapshots.Any(snapshot => snapshot.IsRunning);
+        WindowOrder.RefreshThrottled();
+        _refreshTimer.IsEnabled = _visible && (snapshots.Any(snapshot => snapshot.IsRunning) || WindowOrder.IsEnabled);
     }
 
     private void OnTick(object? sender, EventArgs args) => Refresh();
@@ -176,12 +173,16 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        WindowOrder = null;
         _refreshTimer.Stop();
         _refreshTimer.Tick -= OnTick;
         _service.TimerChanged -= OnTimerChanged;
         _service.NotificationQueued -= OnNotificationQueued;
         _service.NotificationFailed -= OnNotificationFailed;
         _service.HandlerFailed -= OnHandlerFailed;
+        if (_keeper is not null)
+        {
+            _keeper.Applied -= OnWindowOrderApplied;
+            _keeper.Failed -= OnWindowOrderFailed;
+        }
     }
 }

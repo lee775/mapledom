@@ -18,15 +18,15 @@ public class SettingsTests
             var s = AppSettings.CreateDefault();
             s.Rune.IntervalSeconds = 720;
             s.Doping.Notification.Sound = AlarmSound.Alarm2;
-            s.Dongkkop.AutoStart = true;
+            s.Rune.AutoStart = true;
             SettingsStore.Save(s, path);
 
             var loaded = SettingsStore.Load(path);
 
             Assert.Equal(720, loaded.Rune.IntervalSeconds);
             Assert.Equal(AlarmSound.Alarm2, loaded.Doping.Notification.Sound);
-            Assert.True(loaded.Dongkkop.AutoStart);
-            Assert.Equal("동꼽방지", loaded.Dongkkop.Name);
+            Assert.True(loaded.Rune.AutoStart);
+            Assert.Equal("룬", loaded.Rune.Name);
             Assert.Contains("\"Alarm2\"", File.ReadAllText(path));
             Assert.False(File.Exists(path + ".tmp"));
         }
@@ -41,8 +41,6 @@ public class SettingsTests
     {
         var s = SettingsStore.Load(TempPath());
 
-        Assert.Equal(58, s.Dongkkop.IntervalSeconds);
-        Assert.Equal(2, s.Dongkkop.GapSeconds);
         Assert.Equal(900, s.Rune.IntervalSeconds);
         Assert.Equal(1800, s.Doping.IntervalSeconds);
         Assert.Equal(5, s.Doping.LeadSeconds);
@@ -79,7 +77,6 @@ public class SettingsTests
         Assert.Equal(60, s.Rune.ReminderSeconds);
         Assert.Equal("룬", s.Rune.Name);
         Assert.Equal("룬 타이머", s.Rune.Notification.Title);
-        Assert.Equal(58, s.Dongkkop.IntervalSeconds);
         Assert.Equal(1800, s.Doping.IntervalSeconds);
         Assert.Empty(s.Validate());
     }
@@ -100,7 +97,7 @@ public class SettingsTests
     public void Validate_reports_multiple_errors()
     {
         var s = AppSettings.CreateDefault();
-        s.Dongkkop.GapSeconds = -1;
+        s.Rune.ReminderSeconds = 0;
         s.Rune.IntervalSeconds = 100_000;
         s.Notifications.MinSpacingSeconds = -1;
 

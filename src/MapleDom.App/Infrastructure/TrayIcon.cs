@@ -22,13 +22,14 @@ internal sealed class TrayIcon : IDisposable
         Add("전체 정지", viewModel.StopAll);
         Add("룬 깟음", () => viewModel.Acknowledge(TimerService.RuneId));
         Add("도핑했음", () => viewModel.Acknowledge(TimerService.DopingId));
-        Add("창 순서 정렬", viewModel.ArrangeWindows);
+        var order = new Forms.ToolStripMenuItem("창 순서 적용", null, (_, _) => Invoke(viewModel.ToggleWindowOrder));
+        _menu.Items.Add(order);
         _menu.Items.Add(new Forms.ToolStripSeparator());
         var mute = new Forms.ToolStripMenuItem("음소거", null, (_, _) => Invoke(() => viewModel.Muted = !viewModel.Muted));
         var topmost = new Forms.ToolStripMenuItem("항상 위", null, (_, _) => Invoke(() => viewModel.Topmost = !viewModel.Topmost));
         _menu.Items.Add(mute);
         _menu.Items.Add(topmost);
-        _menu.Opening += (_, _) => { mute.Checked = viewModel.Muted; topmost.Checked = viewModel.Topmost; };
+        _menu.Opening += (_, _) => { mute.Checked = viewModel.Muted; topmost.Checked = viewModel.Topmost; order.Checked = viewModel.WindowOrder.IsApplied; };
         _menu.Items.Add(new Forms.ToolStripSeparator());
         Add("종료", exit);
         _drawing = LoadAppIcon() ?? DrawIcon();

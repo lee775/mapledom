@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MapleDom.Core.Notifications;
 
 namespace MapleDom.Core.Settings;
@@ -19,22 +20,7 @@ public sealed class NotificationProfile
     public AlarmScenario Scenario { get; set; } = AlarmScenario.Default;
 
     /// <summary>알림 센터에 남는 시간(초). 0 이하면 만료 없음.</summary>
-    public double ExpireSeconds { get; set; } = 60;
-}
-
-/// <summary>동꼽방지(반복형) 타이머 설정.</summary>
-public sealed class RepeatTimerSettings
-{
-    public string Name { get; set; } = "";
-
-    public double IntervalSeconds { get; set; }
-
-    /// <summary>알림 후 다음 카운트까지의 휴식(초).</summary>
-    public double GapSeconds { get; set; }
-
-    public bool AutoStart { get; set; }
-
-    public NotificationProfile Notification { get; set; } = new();
+    public double ExpireSeconds { get; set; } = 10;
 }
 
 /// <summary>룬/도핑(확인형) 타이머 설정.</summary>
@@ -65,38 +51,44 @@ public sealed class NotificationSettings
     public int MaxQueueLength { get; set; } = 16;
 }
 
-/// <summary>창 순서 고정 항목. 프로세스 이름(확장자 없이)과 제목 포함 문자열로 실행 중인 창을 찾는다. 둘 다 대소문자 무시.</summary>
-public sealed class WindowOrderEntry
+/// <summary>실행 중인 창 하나를 가리키는 조건. 프로세스 이름(확장자 없이) + 제목 포함 문자열, 대소문자 무시. 둘 다 비면 "지정 안 함".</summary>
+public sealed class WindowSelector
 {
     public string ProcessName { get; set; } = "";
 
     /// <summary>창 제목에 포함되어야 하는 문자열. 비어 있으면 제목은 보지 않는다.</summary>
     public string TitleContains { get; set; } = "";
+
+    [JsonIgnore]
+    public bool IsEmpty => string.IsNullOrWhiteSpace(ProcessName) && string.IsNullOrWhiteSpace(TitleContains);
+
+    public WindowSelector Clone() => new() { ProcessName = ProcessName, TitleContains = TitleContains };
 }
 
-/// <summary>창 순서 고정(Z-order) 설정. Windows 목록은 위(앞)에서 아래(뒤) 순서.</summary>
+/// <summary>
+/// 창 순서(Z-order) 고정 설정. Windows는 위(앞)에서 아래(맨 뒤) 순서이며, 마지막 창은 바닥(HWND_BOTTOM)에 놓인다.
+/// 적용 상태에서는 목록의 창을 활성화해도 이 순서가 유지되고, 해제하면 Windows 기본대로 최근 창이 앞에 온다.
+/// </summary>
 public sealed class WindowOrderSettings
 {
     public const int MaxEntries = 16;
 
-    /// <summary>true면 목록의 창이 활성화될 때마다 목록 순서를 다시 적용한다(활성 창은 그대로).</summary>
-    public bool Enabled { get; set; }
+    /// <summary>앱 시작 시 바로 적용 상태로 시작.</summary>
+    public bool ApplyOnStart { get; set; }
 
-    /// <summary>true면 목록의 창을 모두 "항상 위" 층에 놓고 그 안에서 정렬한다.</summary>
+    /// <summary>true면 마지막(맨 뒤) 창을 뺀 나머지를 "항상 위" 층에 놓는다.</summary>
     public bool Topmost { get; set; }
 
-    public List<WindowOrderEntry> Windows { get; set; } = new();
+    public List<WindowSelector> Windows { get; set; } = new();
 }
 
 public sealed class AppSettings
 {
-    public const int CurrentSchemaVersion = 1;
+    public const int CurrentSchemaVersion = 2;
 
     public static readonly TimeSpan MaxInterval = TimeSpan.FromHours(24);
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
-
-    public RepeatTimerSettings Dongkkop { get; set; } = SettingsDefaults.Dongkkop();
 
     public AckTimerSettings Rune { get; set; } = SettingsDefaults.Rune();
 
@@ -111,7 +103,6 @@ public sealed class AppSettings
     /// <summary>비어 있거나 0 이하인 값을 기본값으로 채운다(구버전 파일, 손편집 대비). 자기 자신을 돌려준다.</summary>
     public AppSettings Normalize()
     {
-        Dongkkop = NormalizeRepeat(Dongkkop, SettingsDefaults.Dongkkop());
         Rune = NormalizeAck(Rune, SettingsDefaults.Rune());
         Doping = NormalizeAck(Doping, SettingsDefaults.Doping());
 
@@ -120,12 +111,12 @@ public sealed class AppSettings
         if (Notifications.MaxQueueLength < 1) Notifications.MaxQueueLength = 16;
 
         if (WindowOrder is null) WindowOrder = new WindowOrderSettings();
-        if (WindowOrder.Windows is null) WindowOrder.Windows = new List<WindowOrderEntry>();
-        WindowOrder.Windows.RemoveAll(e => e is null);
-        foreach (var entry in WindowOrder.Windows)
+        if (WindowOrder.Windows is null) WindowOrder.Windows = new List<WindowSelector>();
+        WindowOrder.Windows.RemoveAll(w => w is null);
+        foreach (var window in WindowOrder.Windows)
         {
-            entry.ProcessName = (entry.ProcessName ?? "").Trim();
-            entry.TitleContains = (entry.TitleContains ?? "").Trim();
+            window.ProcessName = (window.ProcessName ?? "").Trim();
+            window.TitleContains = (window.TitleContains ?? "").Trim();
         }
 
         SchemaVersion = CurrentSchemaVersion;
@@ -136,7 +127,6 @@ public sealed class AppSettings
     public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
-        ValidateRepeat(Dongkkop, errors);
         ValidateAck(Rune, errors);
         ValidateAck(Doping, errors);
 
@@ -147,24 +137,13 @@ public sealed class AppSettings
             errors.Add($"창 순서: 창은 최대 {WindowOrderSettings.MaxEntries}개까지 넣을 수 있습니다.");
         for (var i = 0; i < WindowOrder.Windows.Count; i++)
         {
-            var entry = WindowOrder.Windows[i];
-            if (string.IsNullOrWhiteSpace(entry.ProcessName) && string.IsNullOrWhiteSpace(entry.TitleContains))
+            if (WindowOrder.Windows[i].IsEmpty)
                 errors.Add($"창 순서 {i + 1}번: 프로세스 이름 또는 제목을 입력하세요.");
         }
         return errors;
     }
 
     public AppSettings Clone() => SettingsStore.Deserialize(SettingsStore.Serialize(this));
-
-    private static RepeatTimerSettings NormalizeRepeat(RepeatTimerSettings? s, RepeatTimerSettings d)
-    {
-        if (s is null) return d;
-        if (string.IsNullOrWhiteSpace(s.Name)) s.Name = d.Name;
-        if (!(s.IntervalSeconds > 0)) s.IntervalSeconds = d.IntervalSeconds;
-        if (!(s.GapSeconds >= 0)) s.GapSeconds = d.GapSeconds;
-        s.Notification = NormalizeProfile(s.Notification, d.Notification);
-        return s;
-    }
 
     private static AckTimerSettings NormalizeAck(AckTimerSettings? s, AckTimerSettings d)
     {
@@ -187,14 +166,6 @@ public sealed class AppSettings
         return p;
     }
 
-    private static void ValidateRepeat(RepeatTimerSettings s, List<string> errors)
-    {
-        var label = s.Name;
-        if (!(s.IntervalSeconds > 0)) errors.Add($"{label}: 간격은 0보다 커야 합니다.");
-        if (s.IntervalSeconds > MaxInterval.TotalSeconds) errors.Add($"{label}: 간격은 24시간 이하여야 합니다.");
-        if (!(s.GapSeconds >= 0)) errors.Add($"{label}: 휴식 시간은 0 이상이어야 합니다.");
-    }
-
     private static void ValidateAck(AckTimerSettings s, List<string> errors)
     {
         var label = s.Name;
@@ -206,27 +177,9 @@ public sealed class AppSettings
     }
 }
 
-/// <summary>사용자가 요청한 기본값. 동꼽방지 58초+휴식 2초, 룬 15분, 도핑 30분-5초, 리마인드 1분.</summary>
+/// <summary>사용자가 요청한 기본값. 룬 15분, 도핑 30분-5초, 리마인드 1분, 알림 유지 10초.</summary>
 public static class SettingsDefaults
 {
-    public static RepeatTimerSettings Dongkkop() => new()
-    {
-        Name = "동꼽방지",
-        IntervalSeconds = 58,
-        GapSeconds = 2,
-        AutoStart = false,
-        Notification = new NotificationProfile
-        {
-            Title = "동꼽방지",
-            MainMessage = "움직이세요! ({interval} 경과)",
-            ReminderMessage = "",
-            Sound = AlarmSound.Default,
-            ReminderSound = AlarmSound.Default,
-            Scenario = AlarmScenario.Default,
-            ExpireSeconds = 10,
-        },
-    };
-
     public static AckTimerSettings Rune() => new()
     {
         Name = "룬",

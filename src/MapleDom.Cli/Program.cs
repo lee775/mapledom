@@ -11,7 +11,7 @@ namespace MapleDom.Cli;
 /// <summary>
 /// UI 없이 타이머 엔진과 Windows 토스트를 검증하는 콘솔 도구.
 ///   --selftest        토스트 1건 발송 후 알림 센터에 남았는지 확인하고 종료
-///   --demo            축소된 간격(동꼽 6s/휴식 2s, 룬 12s/리마인드 5s, 도핑 15s-2s/리마인드 5s)으로 실행
+///   --demo            축소된 간격(룬 12s/리마인드 5s, 도핑 15s-2s/리마인드 5s)으로 실행
 ///   --run N           키 입력 없이 N초 동안 전체 시작 상태로 실행 후 종료
 ///   --silent          토스트 대신 콘솔 출력만
 ///   --settings PATH   설정 파일 경로 지정
@@ -75,7 +75,7 @@ internal static class Program
 
     private static void RunInteractive(TimerService service)
     {
-        Console.WriteLine("키: [1] 동꼽 토글  [2] 룬 토글  [3] 도핑 토글  [r] 룬 깟음  [d] 도핑했음  [a] 전체 시작  [s] 전체 정지  [m] 음소거  [t] 테스트 알림  [q] 종료");
+        Console.WriteLine("키: [1] 룬 토글  [2] 도핑 토글  [r] 룬 깟음  [d] 도핑했음  [a] 전체 시작  [s] 전체 정지  [m] 음소거  [t] 테스트 알림  [q] 종료");
         while (true)
         {
             Status(string.Join("  |  ", service.Snapshot().Select(Format)) + (service.Muted ? "  [음소거]" : ""));
@@ -85,9 +85,8 @@ internal static class Program
                 var key = Console.ReadKey(intercept: true).KeyChar;
                 switch (char.ToLowerInvariant(key))
                 {
-                    case '1': service.Toggle(TimerService.DongkkopId); break;
-                    case '2': service.Toggle(TimerService.RuneId); break;
-                    case '3': service.Toggle(TimerService.DopingId); break;
+                    case '1': service.Toggle(TimerService.RuneId); break;
+                    case '2': service.Toggle(TimerService.DopingId); break;
                     case 'r': service.Acknowledge(TimerService.RuneId); Log("[입력] 룬 깟음"); break;
                     case 'd': service.Acknowledge(TimerService.DopingId); Log("[입력] 도핑했음"); break;
                     case 'a': service.StartAll(); Log("[입력] 전체 시작"); break;
@@ -134,8 +133,6 @@ internal static class Program
 
     private static void ApplyDemoScale(AppSettings s)
     {
-        s.Dongkkop.IntervalSeconds = 6;
-        s.Dongkkop.GapSeconds = 2;
         s.Rune.IntervalSeconds = 12;
         s.Rune.LeadSeconds = 0;
         s.Rune.ReminderSeconds = 5;

@@ -45,16 +45,14 @@ public class TimerServiceTests
     }
 
     [Fact]
-    public void Defaults_build_three_timers_with_requested_values()
+    public void Defaults_build_two_timers_with_requested_values()
     {
         using var svc = new TimerService(AppSettings.CreateDefault(), NullNotifier.Instance, new FakeClock());
 
         var snaps = svc.Snapshot().ToDictionary(s => s.Id);
 
-        Assert.Equal(3, snaps.Count);
-        Assert.Equal(S(58), snaps[TimerService.DongkkopId].Interval);
-        Assert.Equal(S(2), snaps[TimerService.DongkkopId].Gap);
-        Assert.Equal(TimerKind.Repeat, snaps[TimerService.DongkkopId].Kind);
+        Assert.Equal(2, snaps.Count);
+        Assert.Equal(TimerKind.Acknowledge, snaps[TimerService.RuneId].Kind);
 
         Assert.Equal(S(900), snaps[TimerService.RuneId].Interval);
         Assert.Equal(S(0), snaps[TimerService.RuneId].Lead);
@@ -112,28 +110,6 @@ public class TimerServiceTests
     }
 
     [Fact]
-    public void Dongkkop_repeats_with_gap()
-    {
-        var clock = new FakeClock();
-        var sink = new Collector();
-        using var svc = new TimerService(AppSettings.CreateDefault(), sink, clock);
-
-        svc.Start(TimerService.DongkkopId);
-        clock.Advance(58);
-        svc.Engine.Pump();
-
-        var first = sink.WaitFor(0);
-        Assert.Equal("동꼽방지", first.Title);
-        Assert.Contains("58초", first.Message);
-        Assert.Equal(S(60), svc.Get(TimerService.DongkkopId).Remaining); // 휴식 2초 + 58초
-
-        clock.Advance(60);
-        svc.Engine.Pump();
-        sink.WaitFor(1);
-        Assert.Equal(2, svc.Get(TimerService.DongkkopId).FireCount);
-    }
-
-    [Fact]
     public void Muted_suppresses_notifications_but_timer_keeps_running()
     {
         var clock = new FakeClock();
@@ -159,8 +135,8 @@ public class TimerServiceTests
         settings.Notifications.Enabled = false;
         using var svc = new TimerService(settings, sink, clock);
 
-        svc.Start(TimerService.DongkkopId);
-        clock.Advance(58);
+        svc.Start(TimerService.RuneId);
+        clock.Advance(900);
         svc.Engine.Pump();
 
         Assert.False(sink.WaitForAny(300));
@@ -247,10 +223,10 @@ public class TimerServiceTests
     public void AutoStart_starts_timers_on_construction()
     {
         var settings = AppSettings.CreateDefault();
-        settings.Dongkkop.AutoStart = true;
+        settings.Doping.AutoStart = true;
         using var svc = new TimerService(settings, NullNotifier.Instance, new FakeClock());
 
-        Assert.True(svc.Get(TimerService.DongkkopId).IsRunning);
+        Assert.True(svc.Get(TimerService.DopingId).IsRunning);
         Assert.False(svc.Get(TimerService.RuneId).IsRunning);
     }
 
@@ -260,16 +236,18 @@ public class TimerServiceTests
         var clock = new FakeClock();
         var sink = new Collector();
         var settings = AppSettings.CreateDefault();
-        settings.Rune.IntervalSeconds = 58;
+        settings.Rune.IntervalSeconds = 60;
+        settings.Doping.IntervalSeconds = 60;
+        settings.Doping.LeadSeconds = 0;
         settings.Notifications.MinSpacingSeconds = 0.05;
         using var svc = new TimerService(settings, sink, clock);
 
-        svc.Start(TimerService.DongkkopId);
         svc.Start(TimerService.RuneId);
-        clock.Advance(58);
+        svc.Start(TimerService.DopingId);
+        clock.Advance(60);
         svc.Engine.Pump();
 
-        Assert.Equal(TimerService.DongkkopId, sink.WaitFor(0).TimerId);
-        Assert.Equal(TimerService.RuneId, sink.WaitFor(1).TimerId);
+        Assert.Equal(TimerService.RuneId, sink.WaitFor(0).TimerId);
+        Assert.Equal(TimerService.DopingId, sink.WaitFor(1).TimerId);
     }
 }

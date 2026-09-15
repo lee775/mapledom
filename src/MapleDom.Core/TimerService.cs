@@ -9,17 +9,16 @@ namespace MapleDom.Core;
 
 /// <summary>
 /// UI가 사용하는 단일 진입점.
-/// 설정(<see cref="AppSettings"/>)으로 타이머 3개(동꼽방지/룬/도핑)를 구성하고,
+/// 설정(<see cref="AppSettings"/>)으로 타이머 2개(룬/도핑)를 구성하고,
 /// 알람 이벤트를 알림(제목/본문/사운드)으로 바꿔 <see cref="NotificationDispatcher"/>로 겹치지 않게 발송한다.
 /// <para>스레드 규칙: 모든 이벤트는 백그라운드 스레드에서 발생한다. UI는 Dispatcher로 마샬링할 것.</para>
 /// </summary>
 public sealed class TimerService : IDisposable
 {
-    public const string DongkkopId = "dongkkop";
     public const string RuneId = "rune";
     public const string DopingId = "doping";
 
-    public static readonly IReadOnlyList<string> TimerIds = [DongkkopId, RuneId, DopingId];
+    public static readonly IReadOnlyList<string> TimerIds = [RuneId, DopingId];
 
     private readonly object _gate = new();
     private readonly TimerEngine _engine;
@@ -47,12 +46,6 @@ public sealed class TimerService : IDisposable
             settings.Notifications.MaxQueueLength,
             _engine.Clock);
 
-        _engine.Add(new RepeatTimer(
-            DongkkopId,
-            settings.Dongkkop.Name,
-            Seconds(settings.Dongkkop.IntervalSeconds),
-            Seconds(settings.Dongkkop.GapSeconds)));
-
         _engine.Add(new AckTimer(
             RuneId,
             settings.Rune.Name,
@@ -69,7 +62,6 @@ public sealed class TimerService : IDisposable
 
         _engine.AlarmFired += OnAlarmFired;
 
-        if (settings.Dongkkop.AutoStart) _engine.Start(DongkkopId);
         if (settings.Rune.AutoStart) _engine.Start(RuneId);
         if (settings.Doping.AutoStart) _engine.Start(DopingId);
     }
@@ -137,11 +129,6 @@ public sealed class TimerService : IDisposable
 
         lock (_gate) _settings = next;
 
-        _engine.Configure<RepeatTimer>(DongkkopId, t =>
-        {
-            t.Name = next.Dongkkop.Name;
-            t.Set(Seconds(next.Dongkkop.IntervalSeconds), Seconds(next.Dongkkop.GapSeconds));
-        });
         _engine.Configure<AckTimer>(RuneId, t =>
         {
             t.Name = next.Rune.Name;
@@ -166,7 +153,7 @@ public sealed class TimerService : IDisposable
 
     public TimerSnapshot Toggle(string id) => _engine.Get(id).IsRunning ? _engine.Stop(id) : _engine.Start(id);
 
-    /// <summary>"룬 깟음" / "도핑했음". 정지 상태였다면 시작과 같다. 동꼽방지에 쓰면 재시작.</summary>
+    /// <summary>"룬 깟음" / "도핑했음". 정지 상태였다면 시작과 같다.</summary>
     public TimerSnapshot Acknowledge(string id) => _engine.Acknowledge(id);
 
     public void StartAll() => _engine.StartAll();
@@ -222,7 +209,6 @@ public sealed class TimerService : IDisposable
 
     private static NotificationProfile ProfileFor(AppSettings settings, string id) => id switch
     {
-        DongkkopId => settings.Dongkkop.Notification,
         RuneId => settings.Rune.Notification,
         DopingId => settings.Doping.Notification,
         _ => throw new KeyNotFoundException($"Timer '{id}' has no notification profile."),

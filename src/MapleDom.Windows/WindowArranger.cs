@@ -2,13 +2,17 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using MapleDom.Core.Settings;
-using MapleDom.Core.WindowOrder;
+using MapleDom.Core.Windowing;
 
 namespace MapleDom.Windows;
 
 /// <summary>
 /// 실행 중인 최상위 창 열거와 Z-order 조정(Win32 SetWindowPos).
 /// 모든 호출은 SWP_NOACTIVATE 라서 키 입력을 받는 창(활성 창)은 바뀌지 않는다.
+/// <para>
+/// 실측: 다른 프로세스의 창은 HWND_TOP 으로는 활성 창 위로 올라가지 않는다(호출은 성공, 효과 없음).
+/// HWND_BOTTOM(맨 뒤로), HWND_TOPMOST→HWND_NOTOPMOST 토글(맨 앞으로), hWndInsertAfter=핸들(특정 창 뒤)은 확실히 동작한다.
+/// </para>
 /// </summary>
 public static class WindowArranger
 {
@@ -23,6 +27,7 @@ public static class WindowArranger
     private const uint SWP_NOOWNERZORDER = 0x0200;
     private const uint OrderFlags = SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
 
+    private static readonly nint HWND_BOTTOM = 1;
     private static readonly nint HWND_TOPMOST = -1;
     private static readonly nint HWND_NOTOPMOST = -2;
 
@@ -37,18 +42,10 @@ public static class WindowArranger
 
         EnumWindowsProc callback = (hwnd, _) =>
         {
-            if (!IsWindowVisible(hwnd)) return true;
-            var exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
-            if ((exStyle & WS_EX_TOOLWINDOW) != 0) return true;
-            if (IsCloaked(hwnd)) return true;
-
-            var title = GetTitle(hwnd);
-            if (title.Length == 0) return true;
-
-            GetWindowThreadProcessId(hwnd, out var pid);
-            if (!includeOwnProcess && pid == ownPid) return true;
-
-            result.Add(new WindowInfo(hwnd, title, ProcessNameOf((int)pid, names), (int)pid, (exStyle & WS_EX_TOPMOST) != 0));
+            var info = Describe(hwnd, names);
+            if (info is null) return true;
+            if (!includeOwnProcess && info.ProcessId == ownPid) return true;
+            result.Add(info);
             return true;
         };
 
@@ -57,67 +54,88 @@ public static class WindowArranger
         return result;
     }
 
+    /// <summary>창 하나의 정보. 보이지 않거나 제목이 없거나 도구/숨김 창이면 null.</summary>
+    public static WindowInfo? Describe(nint hwnd) => Describe(hwnd, new Dictionary<int, string>());
+
+    public static WindowInfo? Find(WindowSelector selector)
+    {
+        ArgumentNullException.ThrowIfNull(selector);
+        return selector.IsEmpty ? null : WindowMatcher.Find(selector, EnumerateWindows());
+    }
+
     public static IReadOnlyList<ResolvedWindow> Resolve(WindowOrderSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        return WindowOrderResolver.Resolve(settings.Windows, EnumerateWindows());
+        return WindowMatcher.Resolve(settings.Windows, EnumerateWindows());
+    }
+
+    /// <summary>목록 순서를 적용한다. 반환: 찾아서 정렬한 창 수.</summary>
+    public static int Apply(WindowOrderSettings settings)
+    {
+        var handles = Resolve(settings).Where(r => r.Window is not null).Select(r => r.Window!.Handle).ToList();
+        return Apply(handles, settings.Topmost);
     }
 
     /// <summary>
-    /// 목록 순서를 적용한다. raise=true면 그룹 전체를 맨 앞(또는 Topmost 층)으로 올리고,
-    /// false면 첫 창 위치는 두고 나머지를 그 뒤에 순서대로 놓는다. 반환: 찾아서 정렬한 창 수.
+    /// 앞→뒤 순서의 창들을 배치한다. 첫 창은 맨 앞(또는 항상 위 층), 그다음 창들은 각각 "바로 앞 창의 뒤",
+    /// 마지막 창은 Z-order 바닥으로 보낸다. 활성 상태는 바뀌지 않는다.
     /// </summary>
-    public static int Apply(WindowOrderSettings settings, bool raise)
-    {
-        var handles = Resolve(settings).Where(r => r.Window is not null).Select(r => r.Window!.Handle).ToList();
-        return Apply(handles, settings.Topmost, raise);
-    }
-
-    public static int Apply(IReadOnlyList<nint> handles, bool topmost, bool raise)
+    public static int Apply(IReadOnlyList<nint> handles, bool topmost)
     {
         ArgumentNullException.ThrowIfNull(handles);
         if (handles.Count == 0) return 0;
 
-        if (raise) RaiseWindow(handles[0], topmost);
-        for (var i = 1; i < handles.Count; i++)
+        var front = handles.Count - 1; // 마지막 창을 뺀 앞쪽 창 수
+        for (var i = 0; i < front; i++)
         {
-            // 다른 프로세스 창은 "특정 창 바로 뒤"(hWndInsertAfter=핸들) 지정이 확실하게 먹는다.
-            if (raise && topmost) SetWindowPos(handles[i], HWND_TOPMOST, 0, 0, 0, 0, OrderFlags);
-            SetWindowPos(handles[i], handles[i - 1], 0, 0, 0, 0, OrderFlags);
+            if (topmost) SetWindowPos(handles[i], HWND_TOPMOST, 0, 0, 0, 0, OrderFlags);
+            else if (i == 0) BringToFront(handles[0]);
+            if (i > 0) SetWindowPos(handles[i], handles[i - 1], 0, 0, 0, 0, OrderFlags);
         }
 
+        SendToBack(handles[^1]);
         return handles.Count;
     }
 
-    /// <summary>현재 활성(키 입력) 창을 같은 층의 맨 앞으로 올린다. 활성 상태는 바뀌지 않는다.</summary>
-    public static bool RaiseForeground()
+    /// <summary>창을 Z-order 맨 뒤로 보낸다. 활성 상태는 바뀌지 않는다(활성 창도 뒤로 갈 수 있다).</summary>
+    public static bool SendToBack(nint hwnd)
+        => hwnd != 0 && SetWindowPos(hwnd, HWND_BOTTOM, 0, 0, 0, 0, OrderFlags);
+
+    /// <summary>
+    /// 창을 활성화 없이 맨 앞으로 올린다. 다른 프로세스 창은 HWND_TOP 이 무시되므로 "항상 위"를 켰다가 바로 끈다.
+    /// 원래 항상 위였던 창은 그 층의 맨 앞으로 가고 항상 위를 유지한다.
+    /// </summary>
+    public static bool BringToFront(nint hwnd)
     {
-        var hwnd = GetForegroundWindow();
         if (hwnd == 0) return false;
-        RaiseWindow(hwnd, makeTopmost: false);
-        return true;
+        var keepTopmost = IsTopmost(hwnd);
+        var ok = SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, OrderFlags);
+        if (!keepTopmost) ok &= SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, OrderFlags);
+        return ok;
     }
 
     public static bool IsTopmost(nint hwnd)
         => hwnd != 0 && (GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64() & WS_EX_TOPMOST) != 0;
 
-    /// <summary>
-    /// 창 하나를 활성화 없이 맨 앞으로 올린다. 다른 프로세스의 창은 HWND_TOP 으로는 활성 창 위로 올라가지 않으므로
-    /// (호출은 성공하지만 무시됨), "항상 위"를 켰다가 바로 끄는 방식으로 올린다. 이미 항상 위인 창은 그 층의 맨 앞으로 간다.
-    /// </summary>
-    private static void RaiseWindow(nint hwnd, bool makeTopmost)
-    {
-        if (hwnd == 0) return;
-        var keepTopmost = makeTopmost || IsTopmost(hwnd);
-        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, OrderFlags);
-        if (!keepTopmost) SetWindowPos(hwnd, HWND_NOTOPMOST, 0, 0, 0, 0, OrderFlags);
-    }
-
-    public static nint ForegroundWindow => GetForegroundWindow();
-
     /// <summary>창을 "항상 위" 층에 넣거나(true) 뺀다(false). 활성 상태는 바뀌지 않는다.</summary>
     public static bool SetTopmost(nint hwnd, bool topmost)
         => hwnd != 0 && SetWindowPos(hwnd, topmost ? HWND_TOPMOST : HWND_NOTOPMOST, 0, 0, 0, 0, OrderFlags);
+
+    public static nint ForegroundWindow => GetForegroundWindow();
+
+    private static WindowInfo? Describe(nint hwnd, Dictionary<int, string> names)
+    {
+        if (hwnd == 0 || !IsWindowVisible(hwnd)) return null;
+        var exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE).ToInt64();
+        if ((exStyle & WS_EX_TOOLWINDOW) != 0) return null;
+        if (IsCloaked(hwnd)) return null;
+
+        var title = GetTitle(hwnd);
+        if (title.Length == 0) return null;
+
+        GetWindowThreadProcessId(hwnd, out var pid);
+        return new WindowInfo(hwnd, title, ProcessNameOf((int)pid, names), (int)pid, (exStyle & WS_EX_TOPMOST) != 0);
+    }
 
     private static string GetTitle(nint hwnd)
     {

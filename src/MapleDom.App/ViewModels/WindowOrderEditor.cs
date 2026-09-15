@@ -1,12 +1,12 @@
 using System.Collections.ObjectModel;
 using MapleDom.App.Infrastructure;
 using MapleDom.Core.Settings;
-using MapleDom.Core.WindowOrder;
+using MapleDom.Core.Windowing;
 using MapleDom.Windows;
 
 namespace MapleDom.App.ViewModels;
 
-/// <summary>창 순서 목록의 한 줄. 프로세스 이름과 제목은 직접 고칠 수 있다.</summary>
+/// <summary>창 순서 목록의 한 줄. 프로세스 이름과 제목은 직접 고칠 수 있다. 마지막 줄이 "맨 뒤"(바닥) 창이다.</summary>
 public sealed class WindowOrderEntryEditor : ObservableObject
 {
     private readonly WindowOrderEditor _owner;
@@ -15,6 +15,7 @@ public sealed class WindowOrderEntryEditor : ObservableObject
     private string _status = "확인 전";
     private bool _found;
     private int _index;
+    private bool _last;
 
     public WindowOrderEntryEditor(WindowOrderEditor owner, string processName, string titleContains)
     {
@@ -41,11 +42,21 @@ public sealed class WindowOrderEntryEditor : ObservableObject
     public string Status { get => _status; private set => Set(ref _status, value); }
     public bool IsFound { get => _found; private set => Set(ref _found, value); }
     public int Index { get => _index; set => Set(ref _index, value); }
+
+    public bool IsLast
+    {
+        get => _last;
+        set { if (Set(ref _last, value)) OnPropertyChanged(nameof(Marker)); }
+    }
+
+    /// <summary>마지막 줄에만 "맨 뒤" 표시.</summary>
+    public string Marker => IsLast ? "맨 뒤" : "";
+
     public RelayCommand MoveUpCommand { get; }
     public RelayCommand MoveDownCommand { get; }
     public RelayCommand RemoveCommand { get; }
 
-    public WindowOrderEntry ToEntry() => new() { ProcessName = ProcessName.Trim(), TitleContains = TitleContains.Trim() };
+    public WindowSelector ToSelector() => new() { ProcessName = ProcessName.Trim(), TitleContains = TitleContains.Trim() };
 
     internal void SetStatus(ResolvedWindow resolved)
     {
@@ -57,7 +68,7 @@ public sealed class WindowOrderEntryEditor : ObservableObject
 /// <summary>설정 창 "창 순서" 탭의 편집 상태. 실행 중인 창 목록은 <see cref="RefreshWindows"/>로 다시 읽는다.</summary>
 public sealed class WindowOrderEditor : ObservableObject
 {
-    private bool _enabled;
+    private bool _applyOnStart;
     private bool _topmost;
     private WindowInfo? _selected;
     private IReadOnlyList<WindowInfo> _windows = [];
@@ -73,7 +84,7 @@ public sealed class WindowOrderEditor : ObservableObject
     public RelayCommand RefreshCommand { get; }
     public RelayCommand AddCommand { get; }
 
-    public bool Enabled { get => _enabled; set => Set(ref _enabled, value); }
+    public bool ApplyOnStart { get => _applyOnStart; set => Set(ref _applyOnStart, value); }
     public bool Topmost { get => _topmost; set => Set(ref _topmost, value); }
 
     public WindowInfo? Selected
@@ -85,14 +96,14 @@ public sealed class WindowOrderEditor : ObservableObject
     public bool CanAdd => Selected is not null;
 
     public string Summary => Entries.Count == 0
-        ? "목록이 비어 있습니다. 위에서 창을 골라 추가하세요."
-        : $"{Entries.Count}개 중 {Entries.Count(e => e.IsFound)}개 실행 중";
+        ? "목록이 비어 있습니다. 위에서 창을 골라 추가하세요. 마지막 줄이 맨 뒤(바닥)에 놓입니다."
+        : $"{Entries.Count}개 중 {Entries.Count(e => e.IsFound)}개 실행 중 · 마지막 줄이 맨 뒤";
 
     public static WindowOrderEditor From(WindowOrderSettings settings)
     {
-        var editor = new WindowOrderEditor { Enabled = settings.Enabled, Topmost = settings.Topmost };
-        foreach (var entry in settings.Windows)
-            editor.Entries.Add(new WindowOrderEntryEditor(editor, entry.ProcessName, entry.TitleContains));
+        var editor = new WindowOrderEditor { ApplyOnStart = settings.ApplyOnStart, Topmost = settings.Topmost };
+        foreach (var window in settings.Windows)
+            editor.Entries.Add(new WindowOrderEntryEditor(editor, window.ProcessName, window.TitleContains));
         editor.Reindex();
         editor.RefreshWindows();
         return editor;
@@ -119,7 +130,7 @@ public sealed class WindowOrderEditor : ObservableObject
 
     public void RefreshStatus()
     {
-        var resolved = WindowOrderResolver.Resolve(Entries.Select(e => e.ToEntry()).ToList(), _windows);
+        var resolved = WindowMatcher.Resolve(Entries.Select(e => e.ToSelector()).ToList(), _windows);
         for (var i = 0; i < Entries.Count; i++) Entries[i].SetStatus(resolved[i]);
         OnPropertyChanged(nameof(Summary));
     }
@@ -127,8 +138,8 @@ public sealed class WindowOrderEditor : ObservableObject
     public void AddSelected()
     {
         if (Selected is null) return;
-        var entry = WindowOrderResolver.EntryFor(Selected);
-        Entries.Add(new WindowOrderEntryEditor(this, entry.ProcessName, entry.TitleContains));
+        var selector = WindowMatcher.SelectorFor(Selected);
+        Entries.Add(new WindowOrderEntryEditor(this, selector.ProcessName, selector.TitleContains));
         Reindex();
         RefreshStatus();
     }
@@ -152,13 +163,17 @@ public sealed class WindowOrderEditor : ObservableObject
 
     public WindowOrderSettings Build() => new()
     {
-        Enabled = Enabled,
+        ApplyOnStart = ApplyOnStart,
         Topmost = Topmost,
-        Windows = Entries.Select(e => e.ToEntry()).ToList(),
+        Windows = Entries.Select(e => e.ToSelector()).ToList(),
     };
 
     private void Reindex()
     {
-        for (var i = 0; i < Entries.Count; i++) Entries[i].Index = i + 1;
+        for (var i = 0; i < Entries.Count; i++)
+        {
+            Entries[i].Index = i + 1;
+            Entries[i].IsLast = i == Entries.Count - 1;
+        }
     }
 }

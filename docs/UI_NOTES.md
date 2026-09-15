@@ -86,3 +86,12 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 - 저장 시 `TimerService.ApplySettings` 다음에 `MainViewModel.WindowOrder`(`WindowOrderController`)에도 반영한다. 정렬이 적용되면 메인 창은 자신의 '항상 위'를 다시 세운다(`MainWindow.ReassertTopmost`).
 - 핵심 로직은 UI 밖에 있다: `MapleDom.Core.WindowOrder.WindowOrderResolver`(매칭, xunit), `MapleDom.Windows.WindowArranger`(SetWindowPos), `ForegroundWatcher`(SetWinEventHook), `WindowOrderController`.
 - 검증 도구에 창 순서 탭 검사 6개와 `settings-window-order.png` 렌더가 추가돼 총 44개다. 실제 창 3개(메모장)로 정렬·포커스 유지·자동 고정을 확인하는 별도 시험은 `README.md`의 창 순서 절 참고.
+
+## 동꼽방지 제거 · 창 순서 카드 (2026-09-15, Claude)
+
+- 동꼽방지(반복형) 타이머를 제거했다. 메인 창 카드는 룬·도핑 2개이고, 그 위에 **창 순서 카드**가 있다.
+- 창 순서 카드: 요약("N개 창 · 맨 뒤: 프로세스")과 **[적용]/[해제]** 토글. 적용 = 설정한 순서로 정렬하고 목록 창을 활성화해도 유지(마지막 창은 바닥). 해제 = 감시를 멈추고 활성 창을 앞으로 올려 Windows 기본 상태(최근 창이 앞)로 돌아감.
+- 설정 탭은 룬 / 도핑 / 알림·창 / 창 순서 4개. 창 순서 탭의 체크박스는 "앱 시작 시 바로 적용 상태로 시작"(ApplyOnStart)과 "맨 뒤 창을 뺀 나머지를 항상 위 층에 배치"(Topmost). 목록 마지막 줄에 "맨 뒤" 표시.
+- 단축키 Ctrl+Alt+Z = 창 순서 적용/해제 토글, Ctrl+Alt+X = 활성 창을 맨 앞으로(잠깐 보기). 트레이 메뉴 "창 순서 적용"은 체크 표시로 상태를 보여 준다.
+- `MainViewModel` 생성자에 선택 인자 `WindowOrderKeeper? windowOrder`가 추가됐다(검증 도구는 null). 카드 뷰모델은 `WindowOrderViewModel`, 설정 탭은 `WindowOrderEditor`.
+- 검증 도구: 카드 2개·창 순서 카드 비활성 확인, 맨 뒤 표시, 단축키 4/5 무해성 검사가 추가됐다. 실제 창 3개(메모장)로 적용·재정렬·Peek·해제 후 기본 동작을 확인하는 별도 시험은 README 창 순서 절 참고.
