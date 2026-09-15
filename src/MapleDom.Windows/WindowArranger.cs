@@ -23,7 +23,6 @@ public static class WindowArranger
     private const uint SWP_NOOWNERZORDER = 0x0200;
     private const uint OrderFlags = SWP_NOSIZE | SWP_NOMOVE | SWP_NOACTIVATE | SWP_NOOWNERZORDER;
 
-    private static readonly nint HWND_TOP = 0;
     private static readonly nint HWND_TOPMOST = -1;
     private static readonly nint HWND_NOTOPMOST = -2;
 
