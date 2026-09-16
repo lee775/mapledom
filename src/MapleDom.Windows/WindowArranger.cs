@@ -45,7 +45,7 @@ public static class WindowArranger
             var info = Describe(hwnd, names);
             if (info is null) return true;
             if (!includeOwnProcess && info.ProcessId == ownPid) return true;
-            result.Add(info);
+            result.Add(info with { ZOrder = result.Count + 1 });
             return true;
         };
 

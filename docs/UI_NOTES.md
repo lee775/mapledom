@@ -95,3 +95,9 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 - 단축키 Ctrl+Alt+Z = 창 순서 적용/해제 토글, Ctrl+Alt+X = 활성 창을 맨 앞으로(잠깐 보기). 트레이 메뉴 "창 순서 적용"은 체크 표시로 상태를 보여 준다.
 - `MainViewModel` 생성자에 선택 인자 `WindowOrderKeeper? windowOrder`가 추가됐다(검증 도구는 null). 카드 뷰모델은 `WindowOrderViewModel`, 설정 탭은 `WindowOrderEditor`.
 - 검증 도구: 카드 2개·창 순서 카드 비활성 확인, 맨 뒤 표시, 단축키 4/5 무해성 검사가 추가됐다. 실제 창 3개(메모장)로 적용·재정렬·Peek·해제 후 기본 동작을 확인하는 별도 시험은 README 창 순서 절 참고.
+
+## 맨 뒤 창 콤보 · Z 순서 번호 (2026-09-16, Claude)
+
+- 메인 창 카드의 요약 글자를 **맨 뒤 창 콤보박스**로 바꿨다. 실행 중인 창을 고르면 `MainViewModel.SetBackWindow`가 창 순서 목록의 마지막 항목을 바꾸고(없으면 추가) `ApplySettings` → 키퍼 `Update` → `SettingsStore.Save` 순으로 바로 저장한다. 콤보가 열릴 때(`DropDownOpened`) 목록을 다시 읽는다.
+- `WindowInfo.ZOrder`(1 = 맨 앞)가 추가돼 콤보 항목이 "3. 제목  [프로세스]" 형식으로 현재 쌓임 순서를 보여 준다(설정 탭 콤보도 동일).
+- `MainViewModel.SettingsPath`로 저장 경로를 바꿀 수 있다. 검증 도구는 출력 폴더의 `settings-card.json`에 저장해 실제 설정을 건드리지 않는다.

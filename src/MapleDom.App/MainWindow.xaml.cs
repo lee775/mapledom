@@ -112,6 +112,8 @@ public partial class MainWindow : Window
 
     private void OnCloseClick(object sender, RoutedEventArgs args) => Close();
 
+    private void OnBackWindowDropDownOpened(object sender, EventArgs args) => ViewModel.WindowOrder.RefreshAvailable();
+
     private void OnClosing(object? sender, CancelEventArgs args)
     {
         if (_exiting) return;

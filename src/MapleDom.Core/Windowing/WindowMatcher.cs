@@ -2,10 +2,10 @@ using MapleDom.Core.Settings;
 
 namespace MapleDom.Core.Windowing;
 
-/// <summary>실행 중인 최상위 창 하나. Handle은 Win32 HWND.</summary>
-public sealed record WindowInfo(nint Handle, string Title, string ProcessName, int ProcessId, bool IsTopmost)
+/// <summary>실행 중인 최상위 창 하나. Handle은 Win32 HWND. ZOrder는 현재 쌓임 순서(1 = 맨 앞, 0 = 모름).</summary>
+public sealed record WindowInfo(nint Handle, string Title, string ProcessName, int ProcessId, bool IsTopmost, int ZOrder = 0)
 {
-    public string Display => Title.Length == 0 ? ProcessName : $"{Title}  [{ProcessName}]";
+    public string Display => (ZOrder > 0 ? $"{ZOrder}. " : "") + (Title.Length == 0 ? ProcessName : $"{Title}  [{ProcessName}]");
 }
 
 /// <summary>선택 조건 하나와 그에 매칭된 창(없으면 null).</summary>

@@ -102,6 +102,18 @@ internal static partial class Program
         var window = new MainWindow(service, vm, () => { });
         Check(vm.Cards.Count == 2 && vm.Cards.All(card => card.Status == "정지"), "Two stopped timer cards at startup");
         Check(!vm.WindowOrder.IsEnabled && !vm.WindowOrder.IsApplied, "Window order card is disabled without a keeper");
+        vm.SettingsPath = Path.Combine(output, "settings-card.json");
+        vm.WindowOrder.RefreshAvailable();
+        Check(vm.WindowOrder.Available.Count > 0 && vm.WindowOrder.Available[0].ZOrder == 1 && vm.WindowOrder.Available[0].Display.StartsWith("1. "), "Back-window combo lists running windows with Z-order numbers");
+        vm.WindowOrder.SelectedBack = vm.WindowOrder.Available[0];
+        Check(service.Settings.WindowOrder.Windows.Count == 1 && File.Exists(vm.SettingsPath) && vm.WindowOrder.Status.Contains("창 1개"), "Choosing a back window on the card saves a single-entry order");
+        vm.WindowOrder.SelectedBack = vm.WindowOrder.Available[Math.Min(1, vm.WindowOrder.Available.Count - 1)];
+        Check(service.Settings.WindowOrder.Windows.Count == 1 && service.Settings.WindowOrder.Windows[0].ProcessName == vm.WindowOrder.SelectedBack!.ProcessName, "Choosing again replaces the back entry instead of appending");
+        var cleared = service.Settings;
+        cleared.WindowOrder.Windows.Clear();
+        service.ApplySettings(cleared);
+        vm.WindowOrder.Refresh();
+        Check(vm.WindowOrder.SelectedBack is null, "Clearing the order clears the card selection");
         Render(window, "main-stopped.png", output);
         vm.StartAllCommand.Execute(null);
         Check(vm.Cards.Select(card => card.Remaining).SequenceEqual(["15:00", "29:55"]), "Start all uses Core durations");
