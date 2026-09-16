@@ -26,6 +26,7 @@ UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참�
 - 옵션: "앱 시작 시 바로 적용 상태로 시작", "맨 뒤 창을 뺀 나머지를 '항상 위' 층에 배치".
 - 항목은 프로세스 이름(exe 이름) + 제목 포함 문자열로 창을 찾는다. 제목이 자주 바뀌는 창(브라우저 탭 등)은 제목 칸을 비우거나 짧게 줄인다.
 - 목록에 없는 창(브라우저 등)을 활성화할 때는 아무것도 하지 않는다. 전체화면(독점) 게임 창은 Z-order를 무시하므로 창 모드에서 쓴다.
+- **MapleDom은 관리자 권한으로 실행된다(시작 시 UAC 확인창).** MapleStory처럼 관리자 권한으로 도는 게임 창은 일반 권한 프로그램이 옮길 수 없기 때문이다(Windows UIPI, `SetWindowPos` 오류 5). 일반 권한으로 실행하면 카드 아래 경고 줄에 그 사실이 표시된다.
 - 구현: `MapleDom.Core.Windowing`(매칭, 순수 로직) + `MapleDom.Windows.WindowArranger`(`SetWindowPos`, `SWP_NOACTIVATE`) + `WindowOrderKeeper`(`SetWinEventHook` 포그라운드 감시).
   실측으로 확인한 Windows 특성: 다른 프로세스 창은 `HWND_TOP`으로는 활성 창 위로 올라가지 않으므로 맨 앞은 "항상 위 켰다 끄기", 맨 뒤는 `HWND_BOTTOM`, 상대 순서는 `hWndInsertAfter`=핸들로 잡는다.
 

@@ -101,3 +101,9 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 - 메인 창 카드의 요약 글자를 **맨 뒤 창 콤보박스**로 바꿨다. 실행 중인 창을 고르면 `MainViewModel.SetBackWindow`가 창 순서 목록의 마지막 항목을 바꾸고(없으면 추가) `ApplySettings` → 키퍼 `Update` → `SettingsStore.Save` 순으로 바로 저장한다. 콤보가 열릴 때(`DropDownOpened`) 목록을 다시 읽는다.
 - `WindowInfo.ZOrder`(1 = 맨 앞)가 추가돼 콤보 항목이 "3. 제목  [프로세스]" 형식으로 현재 쌓임 순서를 보여 준다(설정 탭 콤보도 동일).
 - `MainViewModel.SettingsPath`로 저장 경로를 바꿀 수 있다. 검증 도구는 출력 폴더의 `settings-card.json`에 저장해 실제 설정을 건드리지 않는다.
+
+## 관리자 권한 실행 (2026-09-16, Claude)
+
+- `app.manifest`의 `requestedExecutionLevel=requireAdministrator`로 앱이 항상 관리자 권한으로 뜬다(UAC 확인창). MapleStory가 관리자 권한으로 실행되어 일반 권한에서는 `SetWindowPos`가 오류 5로 무시되던 문제의 해결책이다(실측: 메모장은 성공, MapleStory는 거부).
+- `WindowArranger.Apply`는 이제 옮기지 못한 창이 있으면 `Win32Exception`을 던지고, 키퍼의 `Failed`를 거쳐 메인 창 경고 줄에 "게임이 관리자 권한으로 실행 중…" 문구가 뜬다. Peek(잠깐 보기) 실패도 같은 경로.
+- 검증 도구는 App DLL을 자기 프로세스에 올리므로 매니페스트의 영향을 받지 않는다.

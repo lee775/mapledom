@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Windows.Threading;
 using MapleDom.App.Infrastructure;
@@ -170,7 +171,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private void OnWindowOrderFailed(Exception error) => Post(() =>
     {
         ErrorLog.Write(error);
-        ShowWarning("창 순서 기능 오류. error.log를 확인하세요");
+        ShowWarning(WindowArranger.IsAccessDenied(error)
+            ? "게임이 관리자 권한으로 실행 중이라 창을 옮길 수 없습니다. MapleDom을 '관리자 권한으로 실행'하세요"
+            : "창 순서 기능 오류. error.log를 확인하세요");
     });
     private void OnHandlerFailed(Exception error) => Post(() =>
     {

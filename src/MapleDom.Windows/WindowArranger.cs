@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -85,17 +86,31 @@ public static class WindowArranger
         ArgumentNullException.ThrowIfNull(handles);
         if (handles.Count == 0) return 0;
 
+        var failed = 0;
+        var lastError = 0;
+        void Track(bool ok)
+        {
+            if (ok) return;
+            failed++;
+            lastError = Marshal.GetLastWin32Error();
+        }
+
         var front = handles.Count - 1; // 마지막 창을 뺀 앞쪽 창 수
         for (var i = 0; i < front; i++)
         {
-            if (topmost) SetWindowPos(handles[i], HWND_TOPMOST, 0, 0, 0, 0, OrderFlags);
-            else if (i == 0) BringToFront(handles[0]);
-            if (i > 0) SetWindowPos(handles[i], handles[i - 1], 0, 0, 0, 0, OrderFlags);
+            if (topmost) Track(SetWindowPos(handles[i], HWND_TOPMOST, 0, 0, 0, 0, OrderFlags));
+            else if (i == 0) Track(BringToFront(handles[0]));
+            if (i > 0) Track(SetWindowPos(handles[i], handles[i - 1], 0, 0, 0, 0, OrderFlags));
         }
 
-        SendToBack(handles[^1]);
+        Track(SendToBack(handles[^1]));
+        if (failed > 0)
+            throw new Win32Exception(lastError, $"창 {failed}개를 옮기지 못했습니다 (Win32 오류 {lastError}).");
         return handles.Count;
     }
+
+    /// <summary>Win32 오류 5(액세스 거부)인지. 관리자 권한 창을 일반 권한에서 옮기려 할 때 난다(UIPI).</summary>
+    public static bool IsAccessDenied(Exception error) => error is Win32Exception { NativeErrorCode: 5 };
 
     /// <summary>창을 Z-order 맨 뒤로 보낸다. 활성 상태는 바뀌지 않는다(활성 창도 뒤로 갈 수 있다).</summary>
     public static bool SendToBack(nint hwnd)

@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using MapleDom.Core.Settings;
 using MapleDom.Core.Windowing;
 
@@ -132,7 +134,10 @@ public sealed class WindowOrderKeeper : IDisposable
         try
         {
             var foreground = WindowArranger.ForegroundWindow;
-            return foreground != 0 && WindowArranger.BringToFront(foreground);
+            if (foreground == 0) return false;
+            if (WindowArranger.BringToFront(foreground)) return true;
+            Failed?.Invoke(new Win32Exception(Marshal.GetLastWin32Error(), "활성 창을 앞으로 올리지 못했습니다."));
+            return false;
         }
         catch (Exception ex)
         {

@@ -12,6 +12,7 @@
     <AssemblyTitle>MapleDom</AssemblyTitle>
     <Product>MapleDom</Product>
     <ApplicationIcon>Assets/app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="MapleDom.App.Smoke" />
