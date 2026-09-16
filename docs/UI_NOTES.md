@@ -107,3 +107,8 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 - `app.manifest`의 `requestedExecutionLevel=requireAdministrator`로 앱이 항상 관리자 권한으로 뜬다(UAC 확인창). MapleStory가 관리자 권한으로 실행되어 일반 권한에서는 `SetWindowPos`가 오류 5로 무시되던 문제의 해결책이다(실측: 메모장은 성공, MapleStory는 거부).
 - `WindowArranger.Apply`는 이제 옮기지 못한 창이 있으면 `Win32Exception`을 던지고, 키퍼의 `Failed`를 거쳐 메인 창 경고 줄에 "게임이 관리자 권한으로 실행 중…" 문구가 뜬다. Peek(잠깐 보기) 실패도 같은 경로.
 - 검증 도구는 App DLL을 자기 프로세스에 올리므로 매니페스트의 영향을 받지 않는다.
+
+## 창 목록 세션 한정 (2026-09-16, Claude)
+
+- 사용자 요청: 앱을 켤 때 이전에 고른 맨 뒤 창을 기억하지 말 것. `SettingsStore.Save`는 창 목록을 비운 복사본을 쓰고 `Load`는 읽은 뒤 목록을 비운다(`Clone`은 그대로 유지해 실행 중 흐름은 정상). "앱 시작 시 바로 적용" 옵션은 의미가 없어져 제거했다.
+- 카드의 `SetBackWindow`는 이제 파일을 쓰지 않는다(`ApplySettings` + 키퍼 `Update`만). `MainViewModel.SettingsPath`도 제거.

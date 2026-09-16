@@ -209,7 +209,6 @@ public sealed class WindowOrderKeeper : IDisposable
 
     private static WindowOrderSettings Copy(WindowOrderSettings s) => new()
     {
-        ApplyOnStart = s.ApplyOnStart,
         Topmost = s.Topmost,
         Windows = s.Windows.Select(w => w.Clone()).ToList(),
     };

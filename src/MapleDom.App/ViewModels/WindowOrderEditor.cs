@@ -68,7 +68,6 @@ public sealed class WindowOrderEntryEditor : ObservableObject
 /// <summary>설정 창 "창 순서" 탭의 편집 상태. 실행 중인 창 목록은 <see cref="RefreshWindows"/>로 다시 읽는다.</summary>
 public sealed class WindowOrderEditor : ObservableObject
 {
-    private bool _applyOnStart;
     private bool _topmost;
     private WindowInfo? _selected;
     private IReadOnlyList<WindowInfo> _windows = [];
@@ -84,7 +83,6 @@ public sealed class WindowOrderEditor : ObservableObject
     public RelayCommand RefreshCommand { get; }
     public RelayCommand AddCommand { get; }
 
-    public bool ApplyOnStart { get => _applyOnStart; set => Set(ref _applyOnStart, value); }
     public bool Topmost { get => _topmost; set => Set(ref _topmost, value); }
 
     public WindowInfo? Selected
@@ -101,7 +99,7 @@ public sealed class WindowOrderEditor : ObservableObject
 
     public static WindowOrderEditor From(WindowOrderSettings settings)
     {
-        var editor = new WindowOrderEditor { ApplyOnStart = settings.ApplyOnStart, Topmost = settings.Topmost };
+        var editor = new WindowOrderEditor { Topmost = settings.Topmost };
         foreach (var window in settings.Windows)
             editor.Entries.Add(new WindowOrderEntryEditor(editor, window.ProcessName, window.TitleContains));
         editor.Reindex();
@@ -163,7 +161,6 @@ public sealed class WindowOrderEditor : ObservableObject
 
     public WindowOrderSettings Build() => new()
     {
-        ApplyOnStart = ApplyOnStart,
         Topmost = Topmost,
         Windows = Entries.Select(e => e.ToSelector()).ToList(),
     };

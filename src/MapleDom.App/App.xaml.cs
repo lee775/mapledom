@@ -52,9 +52,7 @@ public partial class App : Application
         if (settingsError is not null) { ErrorLog.Write(settingsError); _viewModel.ShowWarning("타이머 설정을 읽지 못해 기본값을 사용합니다"); }
         if (uiError is not null) { ErrorLog.Write(uiError); _viewModel.ShowWarning("창 설정을 읽지 못해 기본값을 사용합니다"); }
 
-        var order = _service.Settings.WindowOrder;
-        _windowOrder.Update(order);
-        if (order.ApplyOnStart && order.Windows.Count > 0) _windowOrder.Apply();
+        _windowOrder.Update(_service.Settings.WindowOrder);
 
         _window = new MainWindow(_service, _viewModel, ExitApplication);
         MainWindow = _window;

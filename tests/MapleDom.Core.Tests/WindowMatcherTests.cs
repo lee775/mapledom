@@ -86,7 +86,6 @@ public class WindowMatcherTests
     public void Settings_roundtrip_trims_and_ignores_computed_fields()
     {
         var s = AppSettings.CreateDefault();
-        s.WindowOrder.ApplyOnStart = true;
         s.WindowOrder.Topmost = true;
         s.WindowOrder.Windows.Add(S(" chrome ", " 인벤 "));
         s.WindowOrder.Windows.Add(S("MapleStory"));
@@ -95,7 +94,6 @@ public class WindowMatcherTests
         var loaded = SettingsStore.Deserialize(json);
 
         Assert.DoesNotContain("IsEmpty", json);
-        Assert.True(loaded.WindowOrder.ApplyOnStart);
         Assert.True(loaded.WindowOrder.Topmost);
         Assert.Equal(2, loaded.WindowOrder.Windows.Count);
         Assert.Equal("chrome", loaded.WindowOrder.Windows[0].ProcessName);
@@ -122,7 +120,6 @@ public class WindowMatcherTests
 
         Assert.NotNull(s.WindowOrder);
         Assert.Empty(s.WindowOrder.Windows);
-        Assert.False(s.WindowOrder.ApplyOnStart);
         Assert.Empty(s.Validate());
     }
 

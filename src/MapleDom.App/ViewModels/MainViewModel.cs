@@ -1,11 +1,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.IO;
 using System.Windows.Threading;
 using MapleDom.App.Infrastructure;
 using MapleDom.Core;
 using MapleDom.Core.Notifications;
-using MapleDom.Core.Settings;
 using MapleDom.Core.Windowing;
 using MapleDom.Core.Timers;
 using MapleDom.Windows;
@@ -53,9 +51,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<TimerCardViewModel> Cards { get; }
     public WindowOrderViewModel WindowOrder { get; }
     public WindowOrderKeeper? WindowOrderKeeper => _keeper;
-
-    /// <summary>카드에서 맨 뒤 창을 고를 때 저장할 설정 파일 경로. null이면 기본 경로. 검증 도구는 임시 경로를 준다.</summary>
-    public string? SettingsPath { get; set; }
     public ObservableCollection<string> RecentNotifications { get; } = [];
     public RelayCommand StartAllCommand { get; }
     public RelayCommand StopAllCommand { get; }
@@ -113,7 +108,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         WindowOrder.Toggle();
     }
 
-    /// <summary>카드의 콤보에서 맨 뒤 창을 고르면 목록의 마지막 항목을 바꾸고(없으면 추가) 바로 저장한다.</summary>
+    /// <summary>카드의 콤보에서 맨 뒤 창을 고르면 목록의 마지막 항목을 바꾼다(없으면 추가). 목록은 세션 한정이라 파일에는 저장하지 않는다.</summary>
     public void SetBackWindow(WindowInfo window)
     {
         var settings = _service.Settings;
@@ -125,12 +120,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         {
             _service.ApplySettings(settings);
             _keeper?.Update(settings.WindowOrder);
-            SettingsStore.Save(settings, SettingsPath);
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or ArgumentException)
+        catch (ArgumentException error)
         {
             ErrorLog.Write(error);
-            ShowWarning("맨 뒤 창 설정을 저장하지 못했습니다. error.log를 확인하세요");
+            ShowWarning("맨 뒤 창을 설정하지 못했습니다. error.log를 확인하세요");
         }
         WindowOrder.Refresh();
     }

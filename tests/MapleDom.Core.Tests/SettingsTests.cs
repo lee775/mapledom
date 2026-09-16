@@ -105,6 +105,32 @@ public class SettingsTests
     }
 
     [Fact]
+    public void Window_list_is_session_only_but_clone_keeps_it()
+    {
+        var path = TempPath();
+        try
+        {
+            var s = AppSettings.CreateDefault();
+            s.WindowOrder.Topmost = true;
+            s.WindowOrder.Windows.Add(new WindowSelector { ProcessName = "notepad" });
+
+            Assert.Single(s.Clone().WindowOrder.Windows);          // 실행 중 복사본은 목록 유지
+
+            SettingsStore.Save(s, path);
+            Assert.DoesNotContain("notepad", File.ReadAllText(path)); // 파일에는 안 씀
+            Assert.Single(s.WindowOrder.Windows);                     // 저장해도 원본은 그대로
+
+            var loaded = SettingsStore.Load(path);
+            Assert.True(loaded.WindowOrder.Topmost);
+            Assert.Empty(loaded.WindowOrder.Windows);                 // 다시 켜면 비어 있음
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void Clone_is_deep()
     {
         var s = AppSettings.CreateDefault();

@@ -35,12 +35,13 @@ public static class SettingsStore
         return settings.Normalize();
     }
 
-    /// <summary>파일이 없으면 기본값. 파일이 깨졌거나 읽을 수 없으면 예외.</summary>
+    /// <summary>파일이 없으면 기본값. 파일이 깨졌거나 읽을 수 없으면 예외. 창 순서 목록은 세션 한정이라 항상 비운 채 돌려준다.</summary>
     public static AppSettings Load(string? path = null)
     {
         path ??= DefaultPath;
-        if (!File.Exists(path)) return AppSettings.CreateDefault();
-        return Deserialize(File.ReadAllText(path));
+        var settings = File.Exists(path) ? Deserialize(File.ReadAllText(path)) : AppSettings.CreateDefault();
+        settings.WindowOrder.Windows.Clear();
+        return settings;
     }
 
     /// <summary>실패해도 예외를 던지지 않고 기본값을 돌려준다. 실패 원인은 error로 전달.</summary>
@@ -67,8 +68,12 @@ public static class SettingsStore
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
 
+        // 창 순서 목록은 저장하지 않는다(세션 한정).
+        var persisted = settings.Clone();
+        persisted.WindowOrder.Windows.Clear();
+
         var temp = path + ".tmp";
-        File.WriteAllText(temp, Serialize(settings));
+        File.WriteAllText(temp, Serialize(persisted));
         File.Move(temp, path, overwrite: true);
     }
 }

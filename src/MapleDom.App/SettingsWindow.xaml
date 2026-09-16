@@ -32,10 +32,9 @@
             <TabItem Header="창 순서">
                 <Grid Margin="2,0,8,0">
                     <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
-                    <TextBlock Text="실행 중인 창을 목록에 넣고 위(앞)에서 아래 순서를 정합니다. 마지막 줄의 창이 맨 뒤(바닥)에 놓입니다. 메인 창의 [적용]을 누르면 이 순서가 유지되고, [해제]하면 활성 창을 앞으로 올리고 Windows 기본대로 돌아갑니다. 키 입력을 받는 창(활성 창)은 바뀌지 않습니다." TextWrapping="Wrap" Foreground="{StaticResource MutedText}" FontSize="11" Margin="0,2,0,8" />
+                    <TextBlock Text="실행 중인 창을 목록에 넣고 위(앞)에서 아래 순서를 정합니다. 마지막 줄의 창이 맨 뒤(바닥)에 놓입니다. 메인 창의 [적용]을 누르면 이 순서가 유지되고, [해제]하면 활성 창을 앞으로 올리고 Windows 기본대로 돌아갑니다. 키 입력을 받는 창(활성 창)은 바뀌지 않습니다. 이 목록은 저장되지 않아 앱을 다시 켜면 비어 있습니다." TextWrapping="Wrap" Foreground="{StaticResource MutedText}" FontSize="11" Margin="0,2,0,8" />
                     <StackPanel Grid.Row="1">
-                        <CheckBox Content="앱 시작 시 바로 적용 상태로 시작" IsChecked="{Binding WindowOrder.ApplyOnStart}" />
-                        <CheckBox Content="맨 뒤 창을 뺀 나머지를 '항상 위' 층에 배치" IsChecked="{Binding WindowOrder.Topmost}" Margin="0,4,0,0" ToolTip="항상 위인 다른 창보다 앞에 두고 싶을 때 켭니다" />
+                        <CheckBox Content="맨 뒤 창을 뺀 나머지를 '항상 위' 층에 배치" IsChecked="{Binding WindowOrder.Topmost}" ToolTip="항상 위인 다른 창보다 앞에 두고 싶을 때 켭니다" />
                     </StackPanel>
                     <DockPanel Grid.Row="2" Margin="0,12,0,6">
                         <Button DockPanel.Dock="Right" Content="추가" Command="{Binding WindowOrder.AddCommand}" IsEnabled="{Binding WindowOrder.CanAdd}" MinWidth="52" Margin="5,0,0,0" />

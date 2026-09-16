@@ -18,12 +18,12 @@ UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참�
 
 게임 창을 조작하면서도 다른 창들을 그 앞에 정해진 순서로 두고 싶을 때 쓴다. 키 입력을 받는 창(활성 창)은 절대 바꾸지 않는다.
 
-1. 메인 창의 **맨 뒤 창** 콤보에서 항상 맨 뒤(바닥)에 둘 창을 고른다(고르면 바로 저장). 그 앞에 여러 창을 순서대로 두고 싶으면 설정 > **창 순서** 탭에서 창을 추가하고 ▲▼로 정한다. 위가 앞, **마지막 줄이 맨 뒤(바닥)** 다. 창 목록의 번호는 지금의 쌓임 순서(1 = 맨 앞)다.
+1. 메인 창의 **맨 뒤 창** 콤보에서 항상 맨 뒤(바닥)에 둘 창을 고른다. 그 앞에 여러 창을 순서대로 두고 싶으면 설정 > **창 순서** 탭에서 창을 추가하고 ▲▼로 정한다. 위가 앞, **마지막 줄이 맨 뒤(바닥)** 다. 창 목록의 번호는 지금의 쌓임 순서(1 = 맨 앞)다. **창 목록은 저장하지 않는다**: 앱을 켜면 항상 비어 있고 매번 다시 고른다('항상 위 층' 옵션만 저장).
 2. 메인 창의 **창 순서 카드**에서 **[적용]**: 정한 순서로 정렬하고, 이후 목록의 창을 클릭하거나 Alt+Tab으로 활성화해도 잠시 뒤 다시 그 순서로 돌아간다(활성 상태는 유지).
 3. **[해제]**: 감시를 멈추고 지금 활성인 창을 앞으로 올린다. 아무것도 하지 않았을 때처럼 Windows 기본대로 최근에 쓴 창이 앞에 온다.
 
 - 전역 단축키 **Ctrl+Alt+Z** = 적용/해제 토글, **Ctrl+Alt+X** = 지금 활성인 창을 맨 앞으로(잠깐 보기, 적용 상태는 유지). 트레이 메뉴에도 "창 순서 적용"이 있다.
-- 옵션: "앱 시작 시 바로 적용 상태로 시작", "맨 뒤 창을 뺀 나머지를 '항상 위' 층에 배치".
+- 옵션: "맨 뒤 창을 뺀 나머지를 '항상 위' 층에 배치".
 - 항목은 프로세스 이름(exe 이름) + 제목 포함 문자열로 창을 찾는다. 제목이 자주 바뀌는 창(브라우저 탭 등)은 제목 칸을 비우거나 짧게 줄인다.
 - 목록에 없는 창(브라우저 등)을 활성화할 때는 아무것도 하지 않는다. 전체화면(독점) 게임 창은 Z-order를 무시하므로 창 모드에서 쓴다.
 - **MapleDom은 관리자 권한으로 실행된다(시작 시 UAC 확인창).** MapleStory처럼 관리자 권한으로 도는 게임 창은 일반 권한 프로그램이 옮길 수 없기 때문이다(Windows UIPI, `SetWindowPos` 오류 5). 일반 권한으로 실행하면 카드 아래 경고 줄에 그 사실이 표시된다.
@@ -131,15 +131,14 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
       "ReminderMessage": "룬 아직 안 깠어요! (+{overdue} 경과)", "Sound": "Reminder", "Scenario": "Reminder", "ExpireSeconds": 10 } },
   "Doping": { "Name": "도핑", "IntervalSeconds": 1800, "LeadSeconds": 5, "ReminderSeconds": 60, "AutoStart": false },
   "Notifications": { "Enabled": true, "MinSpacingSeconds": 2, "MaxQueueLength": 16 },
-  "WindowOrder": { "ApplyOnStart": false, "Topmost": false,
-    "Windows": [ { "ProcessName": "chrome", "TitleContains": "인벤" }, { "ProcessName": "MapleStory", "TitleContains": "" } ] }
+  "WindowOrder": { "Topmost": false }
 }
 ```
 
 - 문구 토큰: `{name}` 타이머 이름, `{interval}` 설정 간격, `{n}` 리마인드 회차, `{overdue}` 본 알림 이후 경과.
 - `Sound`: Default, IM, Mail, Reminder, SMS, Alarm, Alarm2~Alarm5, Call, Silent (Windows 알림 사운드).
 - `Scenario`: Default(자동으로 사라짐), Reminder(닫을 때까지 유지), Alarm(알람 취급, 집중 지원 "알람만" 모드도 통과).
-- `WindowOrder.Windows`: 위가 앞, 마지막이 맨 뒤(바닥). 최대 16개.
+- `WindowOrder.Windows`(창 목록)는 파일에 저장되지 않는다(세션 한정). 최대 16개.
 
 ## UI에서 쓰는 API 요약
 

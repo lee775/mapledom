@@ -68,13 +68,11 @@ public sealed class WindowSelector
 /// <summary>
 /// 창 순서(Z-order) 고정 설정. Windows는 위(앞)에서 아래(맨 뒤) 순서이며, 마지막 창은 바닥(HWND_BOTTOM)에 놓인다.
 /// 적용 상태에서는 목록의 창을 활성화해도 이 순서가 유지되고, 해제하면 Windows 기본대로 최근 창이 앞에 온다.
+/// <para>Windows 목록은 파일에 저장하지 않는다(세션 한정): 앱을 켜면 항상 비어 있고 매번 다시 고른다. Topmost만 저장된다.</para>
 /// </summary>
 public sealed class WindowOrderSettings
 {
     public const int MaxEntries = 16;
-
-    /// <summary>앱 시작 시 바로 적용 상태로 시작.</summary>
-    public bool ApplyOnStart { get; set; }
 
     /// <summary>true면 마지막(맨 뒤) 창을 뺀 나머지를 "항상 위" 층에 놓는다.</summary>
     public bool Topmost { get; set; }
