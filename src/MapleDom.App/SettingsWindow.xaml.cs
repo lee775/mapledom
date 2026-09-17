@@ -3,6 +3,7 @@ using System.Windows;
 using MapleDom.App.ViewModels;
 using MapleDom.App.Infrastructure;
 using MapleDom.Core;
+using MapleDom.Core.Notifications;
 using MapleDom.Core.Settings;
 using MapleDom.Windows;
 
@@ -50,6 +51,26 @@ public partial class SettingsWindow : Window
         Activate();
     }
 
+    /// <summary>봇이 받은 최근 메시지에서 채팅 ID를 찾아 넣는다.</summary>
+    private async void OnFindChatId(object sender, RoutedEventArgs args)
+    {
+        var token = ViewModel.Telegram.BotToken;
+        ViewModel.Telegram.Status = "채팅 ID를 찾는 중...";
+        var result = await Task.Run(() => TelegramNotifier.FindChatId(token));
+        if (result.Ok && result.ChatId is { } id) ViewModel.Telegram.ChatId = id;
+        ViewModel.Telegram.Status = result.Message;
+    }
+
+    /// <summary>편집 중인 토큰·채팅 ID로 메시지를 한 건 보내 본다(저장하지 않음).</summary>
+    private async void OnTelegramTest(object sender, RoutedEventArgs args)
+    {
+        var token = ViewModel.Telegram.BotToken;
+        var chatId = ViewModel.Telegram.ChatId;
+        ViewModel.Telegram.Status = "보내는 중...";
+        var result = await Task.Run(() => TelegramNotifier.SendText(token, chatId, "MapleDom 텔레그램 테스트 알림입니다."));
+        ViewModel.Telegram.Status = result.Message;
+    }
+
     private void OnSave(object sender, RoutedEventArgs args)
     {
         if (!ViewModel.TryBuild(out var settings, out var uiSettings)) return;
@@ -63,6 +84,7 @@ public partial class SettingsWindow : Window
         {
             _service.ApplySettings(settings);
             _main.WindowOrderKeeper?.Update(settings.WindowOrder);
+            _main.Telegram?.Update(settings.Telegram);
             SettingsStore.Save(settings);
             settingsSaved = true;
             uiSettings.Save();
@@ -72,6 +94,7 @@ public partial class SettingsWindow : Window
             ErrorLog.Write(error);
             _service.ApplySettings(previous);
             _main.WindowOrderKeeper?.Update(previous.WindowOrder);
+            _main.Telegram?.Update(previous.Telegram);
             if (settingsSaved)
             {
                 try { SettingsStore.Save(previous); }

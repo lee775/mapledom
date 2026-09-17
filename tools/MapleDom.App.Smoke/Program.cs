@@ -182,6 +182,16 @@ internal static partial class Program
         Render(dialog, "settings-window-order.png", output);
         order.Remove(order.Entries[0]);
         order.Topmost = false;
+        var telegram = dialog.ViewModel.Telegram;
+        Check(!telegram.Enabled && telegram.SendRune && telegram.SendDoping && !telegram.SendMinute, "Telegram tab starts off with rune and doping selected");
+        telegram.Enabled = true;
+        Check(!dialog.ViewModel.TryBuild(out _, out _) && dialog.ViewModel.Errors.Any(e => e.Contains("채팅 ID")), "Telegram tab requires a token and chat id when enabled");
+        telegram.BotToken = "123456:test-token";
+        telegram.ChatId = "42";
+        Check(dialog.ViewModel.TryBuild(out var withTelegram, out _) && withTelegram.Telegram.Enabled && withTelegram.Telegram.ChatId == "42", "Telegram tab builds into settings");
+        tabs.SelectedIndex = 5;
+        Render(dialog, "settings-telegram.png", output);
+        telegram.Enabled = false;
         dialog.Close();
         vm.StopAllCommand.Execute(null);
         Check(vm.Cards.All(card => !card.IsRunning), "Stop all updates every card");

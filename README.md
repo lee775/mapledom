@@ -14,6 +14,7 @@ UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참�
 - 모든 값은 설정 파일(`%LocalAppData%\MapleDom\settings.json`)에서 바꿀 수 있다.
 - 시작 버튼은 확인 버튼과 같은 의미다(시작 시점 = 룬을 깠거나 도핑한 시점).
 - 알림은 Windows 시스템 알림(토스트)으로 온다. 여러 알림이 동시에 만기되면 **최소 2초 간격으로 하나씩** 발동되어 겹치지 않는다.
+- 설정 > **텔레그램** 탭을 켜면 같은 알림이 텔레그램 봇 메시지로도 간다(아래 참고).
 
 ## 창 순서 적용 / 해제 (Z-order)
 
@@ -30,6 +31,20 @@ UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참�
 - **MapleDom은 관리자 권한으로 실행된다(시작 시 UAC 확인창).** MapleStory처럼 관리자 권한으로 도는 게임 창은 일반 권한 프로그램이 옮길 수 없기 때문이다(Windows UIPI, `SetWindowPos` 오류 5). 일반 권한으로 실행하면 카드 아래 경고 줄에 그 사실이 표시된다.
 - 구현: `MapleDom.Core.Windowing`(매칭, 순수 로직) + `MapleDom.Windows.WindowArranger`(`SetWindowPos`, `SWP_NOACTIVATE`) + `WindowOrderKeeper`(`SetWinEventHook` 포그라운드 감시).
   실측으로 확인한 Windows 특성: 다른 프로세스 창은 `HWND_TOP`으로는 활성 창 위로 올라가지 않으므로 맨 앞은 "항상 위 켰다 끄기", 맨 뒤는 `HWND_BOTTOM`, 상대 순서는 `hWndInsertAfter`=핸들로 잡는다.
+
+## 텔레그램 알림 (선택)
+
+자리를 비웠을 때도 알림을 받고 싶으면 설정 > **텔레그램** 탭을 쓴다.
+
+1. 텔레그램에서 `@BotFather`에게 `/newbot` 으로 봇을 만들고 받은 **토큰**을 붙여 넣는다.
+2. 만든 봇과의 대화창에서 **아무 메시지나 한 번 보낸 뒤** [채팅 ID 찾기]를 누르면 채팅 ID가 자동으로 채워진다.
+3. 보낼 알림을 고른다(기본: 룬·도핑만. 1분 알림은 1분마다 메시지가 가므로 기본 꺼짐).
+4. [테스트 전송]으로 확인하고 저장한다.
+
+- 전송은 별도 큐/스레드에서 이뤄져 네트워크가 느려도 Windows 토스트가 밀리지 않는다. 실패하면 메인 창 경고 줄에 사유가 뜬다.
+- 도착까지 보통 1초 안팎 걸리므로 정확한 타이밍은 PC 토스트를 기준으로 본다.
+- **봇 토큰은 `%LocalAppData%\MapleDom\settings.json` 에 평문으로 저장된다.** 이 파일은 저장소에 들어가지 않는다. 토큰이 새면 BotFather의 `/revoke` 로 재발급한다.
+- 구현: `MapleDom.Core.Notifications.TelegramNotifier` (`IAlarmNotifier`), `CompositeNotifier` 로 토스트와 함께 묶인다.
 
 ## 정확도 설계
 
@@ -48,7 +63,7 @@ src/
     Time/Clock.cs         IClock, MonotonicClock
     Timers/               RepeatTimer, AckTimer(룬/도핑), TimerSnapshot, AlarmEvent
     Engine/TimerEngine.cs 스케줄러 스레드
-    Notifications/        IAlarmNotifier, NotificationDispatcher(직렬화 큐)
+    Notifications/        IAlarmNotifier, NotificationDispatcher(직렬화 큐), TelegramNotifier(봇 전송)
     Settings/             AppSettings(JSON), SettingsStore
     Windowing/            창 선택 조건 ↔ 실행 중인 창 매칭(순수 로직)
     Text/                 DurationFormat("14:59", "29분 55초"), AlarmTemplate
@@ -56,7 +71,7 @@ src/
   MapleDom.Windows/     WindowsToastNotifier(토스트), WindowArranger/ForegroundWatcher/WindowOrderKeeper(창 순서, Win32)
   MapleDom.Cli/         콘솔 검증 도구
 tests/
-  MapleDom.Core.Tests/  xunit 92개
+  MapleDom.Core.Tests/  xunit 101개
 docs/
   UI_PROMPT.md          최초 UI 구현 때 Codex에게 준 프롬프트(이력)
   UI_NOTES.md           UI 사용법, 구현 결정, 검증 결과
@@ -135,6 +150,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
       "ReminderMessage": "룬 아직 안 깠어요! (+{overdue} 경과)", "Sound": "Reminder", "Scenario": "Reminder", "ExpireSeconds": 10 } },
   "Doping": { "Name": "도핑", "IntervalSeconds": 1800, "LeadSeconds": 5, "ReminderSeconds": 60, "AutoStart": false },
   "Notifications": { "Enabled": true, "MinSpacingSeconds": 2, "MaxQueueLength": 16 },
+  "Telegram": { "Enabled": false, "BotToken": "", "ChatId": "", "SendMinute": false, "SendRune": true, "SendDoping": true },
   "WindowOrder": { "Topmost": false }
 }
 ```

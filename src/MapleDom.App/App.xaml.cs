@@ -3,6 +3,7 @@ using System.Windows.Threading;
 using MapleDom.App.Infrastructure;
 using MapleDom.App.ViewModels;
 using MapleDom.Core;
+using MapleDom.Core.Notifications;
 using MapleDom.Core.Settings;
 using MapleDom.Windows;
 
@@ -13,6 +14,7 @@ public partial class App : Application
     private SingleInstance? _instance;
     private TimerService? _service;
     private WindowOrderKeeper? _windowOrder;
+    private TelegramNotifier? _telegram;
     private MainViewModel? _viewModel;
     private MainWindow? _window;
     private TrayIcon? _tray;
@@ -33,22 +35,25 @@ public partial class App : Application
         }
         var settings = SettingsStore.LoadOrDefault(null, out var settingsError);
         var uiSettings = UiSettings.Load(out var uiError);
+        _telegram = new TelegramNotifier();
+        var notifier = new CompositeNotifier(new WindowsToastNotifier(), _telegram);
         try
         {
             // Check values before constructing Core workers: hand-edited JSON can contain
             // finite but enormous durations that Core.Validate does not bound in every field.
             var validator = new SettingsViewModel(settings, uiSettings, []);
             if (!validator.TryBuild(out var validated, out _)) throw new ArgumentException(string.Join("; ", validator.Errors));
-            _service = new TimerService(validated, new WindowsToastNotifier());
+            _service = new TimerService(validated, notifier);
         }
         catch (Exception error) when (error is ArgumentException or OverflowException)
         {
             settingsError = error;
-            _service = new TimerService(AppSettings.CreateDefault(), new WindowsToastNotifier());
+            _service = new TimerService(AppSettings.CreateDefault(), notifier);
         }
 
+        _telegram.Update(_service.Settings.Telegram);
         _windowOrder = new WindowOrderKeeper();
-        _viewModel = new MainViewModel(_service, uiSettings, Dispatcher, _windowOrder);
+        _viewModel = new MainViewModel(_service, uiSettings, Dispatcher, _windowOrder, _telegram);
         if (settingsError is not null) { ErrorLog.Write(settingsError); _viewModel.ShowWarning("타이머 설정을 읽지 못해 기본값을 사용합니다"); }
         if (uiError is not null) { ErrorLog.Write(uiError); _viewModel.ShowWarning("창 설정을 읽지 못해 기본값을 사용합니다"); }
 
@@ -85,6 +90,7 @@ public partial class App : Application
         {
             _tray?.Dispose();
             _windowOrder?.Dispose();
+            _telegram?.Dispose();
             _viewModel?.Dispose();
             _service?.Dispose();
             _instance?.Dispose();

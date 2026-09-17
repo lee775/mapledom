@@ -120,3 +120,12 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 - App: 설정 탭이 **1분 / 룬 / 도핑 / 알림·창 / 창 순서** 5개. `TimerSettingsEditor.From(RepeatTimerSettings)`와 `BuildRepeat`를 되살렸고, `IsAcknowledge` 기본값을 false로 되돌려 반복형 탭에서는 휴식 시간 칸이, 확인형 탭에서는 선행/리마인드 칸이 보인다.
 - `TimerCardViewModel.CanAcknowledge`는 `Id != MinuteId` — 1분 카드에는 확인 버튼이 없다.
 - 검증 도구: 카드 3개·확인 버튼 유무·1분 탭 빌드/검증 검사 추가, 탭 인덱스 이동(알림·창 3, 창 순서 4), 렌더 `settings-minute.png` 추가.
+
+## 텔레그램 알림 (2026-09-17, Claude)
+
+- 설정 탭이 **1분 / 룬 / 도핑 / 알림·창 / 창 순서 / 텔레그램** 6개가 됐다. 텔레그램 탭: 사용 여부, 봇 토큰, 채팅 ID(+[채팅 ID 찾기]), 타이머별 전송 체크 3개, [테스트 전송], 결과 한 줄(`Telegram.Status`).
+- `TelegramNotifier`(Core/Notifications)는 `IAlarmNotifier`라서 `CompositeNotifier(WindowsToastNotifier, TelegramNotifier)`로 묶어 `TimerService`에 넘긴다. App이 소유하고 Dispose한다.
+- 전송은 내부 `NotificationDispatcher`(간격 0, 큐 32)에 태워 별도 스레드에서 한다 — `Notify`는 즉시 반환하므로 네트워크 지연이 토스트 큐를 막지 않는다. 실패는 `SendFailed` → 메인 창 경고 줄.
+- `ShouldSend(settings, timerId)`가 켜짐·설정 완료·타이머별 토글을 판단한다. 기본은 룬·도핑만 켜짐(1분은 스팸이라 꺼둠).
+- 설정 저장 시 `SettingsWindow.OnSave`가 `_main.Telegram?.Update(...)`로 실행 중인 알림기에 반영하고, 저장 실패 롤백에서도 되돌린다.
+- [채팅 ID 찾기]/[테스트 전송]은 `Task.Run` + `await`(async void 핸들러)로 UI 스레드를 막지 않는다. 둘 다 저장 없이 편집 중인 값으로 동작한다.

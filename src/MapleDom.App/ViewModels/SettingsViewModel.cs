@@ -108,12 +108,55 @@ public sealed class TimerSettingsEditor
     }
 }
 
+/// <summary>설정 창 "텔레그램" 탭의 편집 상태.</summary>
+public sealed class TelegramEditor : ObservableObject
+{
+    private bool _enabled;
+    private string _botToken = "";
+    private string _chatId = "";
+    private bool _sendMinute;
+    private bool _sendRune = true;
+    private bool _sendDoping = true;
+    private string _status = "";
+
+    public bool Enabled { get => _enabled; set => Set(ref _enabled, value); }
+    public string BotToken { get => _botToken; set => Set(ref _botToken, value); }
+    public string ChatId { get => _chatId; set => Set(ref _chatId, value); }
+    public bool SendMinute { get => _sendMinute; set => Set(ref _sendMinute, value); }
+    public bool SendRune { get => _sendRune; set => Set(ref _sendRune, value); }
+    public bool SendDoping { get => _sendDoping; set => Set(ref _sendDoping, value); }
+
+    /// <summary>[채팅 ID 찾기] · [테스트 전송] 결과 한 줄.</summary>
+    public string Status { get => _status; set => Set(ref _status, value); }
+
+    public static TelegramEditor From(TelegramSettings settings) => new()
+    {
+        Enabled = settings.Enabled,
+        BotToken = settings.BotToken,
+        ChatId = settings.ChatId,
+        SendMinute = settings.SendMinute,
+        SendRune = settings.SendRune,
+        SendDoping = settings.SendDoping,
+    };
+
+    public TelegramSettings Build() => new()
+    {
+        Enabled = Enabled,
+        BotToken = BotToken.Trim(),
+        ChatId = ChatId.Trim(),
+        SendMinute = SendMinute,
+        SendRune = SendRune,
+        SendDoping = SendDoping,
+    };
+}
+
 public sealed class SettingsViewModel : ObservableObject
 {
     private TimerSettingsEditor _minute = null!;
     private TimerSettingsEditor _rune = null!;
     private TimerSettingsEditor _doping = null!;
     private WindowOrderEditor _windowOrder = null!;
+    private TelegramEditor _telegram = null!;
     private bool _notificationsEnabled;
     private string _minSpacing = "";
     private bool _topmost;
@@ -135,6 +178,7 @@ public sealed class SettingsViewModel : ObservableObject
     public TimerSettingsEditor Rune { get => _rune; private set => Set(ref _rune, value); }
     public TimerSettingsEditor Doping { get => _doping; private set => Set(ref _doping, value); }
     public WindowOrderEditor WindowOrder { get => _windowOrder; private set => Set(ref _windowOrder, value); }
+    public TelegramEditor Telegram { get => _telegram; private set => Set(ref _telegram, value); }
     public bool NotificationsEnabled { get => _notificationsEnabled; set => Set(ref _notificationsEnabled, value); }
     public string MinSpacing { get => _minSpacing; set => Set(ref _minSpacing, value); }
     public bool Topmost { get => _topmost; set => Set(ref _topmost, value); }
@@ -151,6 +195,7 @@ public sealed class SettingsViewModel : ObservableObject
         Rune = TimerSettingsEditor.From(settings.Rune);
         Doping = TimerSettingsEditor.From(settings.Doping);
         WindowOrder = WindowOrderEditor.From(settings.WindowOrder);
+        Telegram = TelegramEditor.From(settings.Telegram);
         NotificationsEnabled = settings.Notifications.Enabled;
         MinSpacing = TimerSettingsEditor.Format(settings.Notifications.MinSpacingSeconds);
         Topmost = uiSettings.Topmost;
@@ -179,6 +224,7 @@ public sealed class SettingsViewModel : ObservableObject
         settings.Notifications.Enabled = NotificationsEnabled;
         settings.Notifications.MinSpacingSeconds = TimerSettingsEditor.Number(MinSpacing, "알림 최소 간격", errors);
         settings.WindowOrder = WindowOrder.Build();
+        settings.Telegram = Telegram.Build();
         errors.AddRange(settings.Validate());
         foreach (var timer in new[] { settings.Rune, settings.Doping })
         {

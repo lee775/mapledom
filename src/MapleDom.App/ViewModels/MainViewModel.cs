@@ -16,18 +16,21 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherTimer _refreshTimer;
     private readonly WindowOrderKeeper? _keeper;
+    private readonly TelegramNotifier? _telegram;
     private bool _visible;
     private bool _disposed;
     private string _warning = "";
     private UiSettings _uiSettings;
 
     /// <param name="windowOrder">창 순서 키퍼. null이면 카드가 비활성으로만 표시된다(검증 도구).</param>
-    public MainViewModel(TimerService service, UiSettings uiSettings, Dispatcher dispatcher, WindowOrderKeeper? windowOrder = null)
+    public MainViewModel(TimerService service, UiSettings uiSettings, Dispatcher dispatcher, WindowOrderKeeper? windowOrder = null, TelegramNotifier? telegram = null)
     {
         _service = service;
         _uiSettings = uiSettings;
         _dispatcher = dispatcher;
         _keeper = windowOrder;
+        _telegram = telegram;
+        if (telegram is not null) telegram.SendFailed += OnTelegramFailed;
         Cards = TimerService.TimerIds.Select(id => new TimerCardViewModel(id, Toggle, Acknowledge)).ToArray();
         WindowOrder = new WindowOrderViewModel(windowOrder, Post, () => _service.Settings.WindowOrder, SetBackWindow);
         StartAllCommand = new RelayCommand(StartAll);
@@ -51,6 +54,9 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     public IReadOnlyList<TimerCardViewModel> Cards { get; }
     public WindowOrderViewModel WindowOrder { get; }
     public WindowOrderKeeper? WindowOrderKeeper => _keeper;
+
+    /// <summary>텔레그램 알림기. 설정 저장 시 Update를 불러 준다. null이면 텔레그램 기능 없음(검증 도구).</summary>
+    public TelegramNotifier? Telegram => _telegram;
     public ObservableCollection<string> RecentNotifications { get; } = [];
     public RelayCommand StartAllCommand { get; }
     public RelayCommand StopAllCommand { get; }
@@ -161,6 +167,11 @@ public sealed class MainViewModel : ObservableObject, IDisposable
         ErrorLog.Write(error);
         ShowWarning("Windows 알림이 꺼져 있거나 집중 지원 중입니다");
     });
+    private void OnTelegramFailed(AlarmNotification notification, Exception error) => Post(() =>
+    {
+        ErrorLog.Write(error);
+        ShowWarning("텔레그램 전송 실패: " + error.Message);
+    });
     private void OnWindowOrderApplied() => Post(() => WindowOrderApplied?.Invoke());
     private void OnWindowOrderFailed(Exception error) => Post(() =>
     {
@@ -209,5 +220,6 @@ public sealed class MainViewModel : ObservableObject, IDisposable
             _keeper.Applied -= OnWindowOrderApplied;
             _keeper.Failed -= OnWindowOrderFailed;
         }
+        if (_telegram is not null) _telegram.SendFailed -= OnTelegramFailed;
     }
 }

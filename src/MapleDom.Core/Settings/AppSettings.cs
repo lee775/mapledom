@@ -66,6 +66,33 @@ public sealed class NotificationSettings
     public int MaxQueueLength { get; set; } = 16;
 }
 
+/// <summary>
+/// 텔레그램 봇 알림 설정. 켜면 Windows 토스트와 함께 봇 메시지도 간다.
+/// <para>봇 토큰은 이 설정 파일(%LocalAppData%\MapleDom\settings.json)에 평문으로 저장된다. 저장소에 올리지 말 것.</para>
+/// </summary>
+public sealed class TelegramSettings
+{
+    public bool Enabled { get; set; }
+
+    /// <summary>@BotFather가 준 토큰.</summary>
+    public string BotToken { get; set; } = "";
+
+    /// <summary>받을 사람(또는 그룹)의 채팅 ID.</summary>
+    public string ChatId { get; set; } = "";
+
+    /// <summary>1분 알림도 보낼지. 1분마다 메시지가 가므로 기본은 끔.</summary>
+    public bool SendMinute { get; set; }
+
+    public bool SendRune { get; set; } = true;
+
+    public bool SendDoping { get; set; } = true;
+
+    [JsonIgnore]
+    public bool IsConfigured => !string.IsNullOrWhiteSpace(BotToken) && !string.IsNullOrWhiteSpace(ChatId);
+
+    public TelegramSettings Clone() => (TelegramSettings)MemberwiseClone();
+}
+
 /// <summary>실행 중인 창 하나를 가리키는 조건. 프로세스 이름(확장자 없이) + 제목 포함 문자열, 대소문자 무시. 둘 다 비면 "지정 안 함".</summary>
 public sealed class WindowSelector
 {
@@ -97,7 +124,7 @@ public sealed class WindowOrderSettings
 
 public sealed class AppSettings
 {
-    public const int CurrentSchemaVersion = 3;
+    public const int CurrentSchemaVersion = 4;
 
     public static readonly TimeSpan MaxInterval = TimeSpan.FromHours(24);
 
@@ -113,6 +140,8 @@ public sealed class AppSettings
 
     public WindowOrderSettings WindowOrder { get; set; } = new();
 
+    public TelegramSettings Telegram { get; set; } = new();
+
     public static AppSettings CreateDefault() => new();
 
     /// <summary>비어 있거나 0 이하인 값을 기본값으로 채운다(구버전 파일, 손편집 대비). 자기 자신을 돌려준다.</summary>
@@ -125,6 +154,10 @@ public sealed class AppSettings
         if (Notifications is null) Notifications = new NotificationSettings();
         if (!(Notifications.MinSpacingSeconds >= 0)) Notifications.MinSpacingSeconds = 2;
         if (Notifications.MaxQueueLength < 1) Notifications.MaxQueueLength = 16;
+
+        if (Telegram is null) Telegram = new TelegramSettings();
+        Telegram.BotToken = (Telegram.BotToken ?? "").Trim();
+        Telegram.ChatId = (Telegram.ChatId ?? "").Trim();
 
         if (WindowOrder is null) WindowOrder = new WindowOrderSettings();
         if (WindowOrder.Windows is null) WindowOrder.Windows = new List<WindowSelector>();
@@ -149,6 +182,13 @@ public sealed class AppSettings
 
         if (!(Notifications.MinSpacingSeconds >= 0)) errors.Add("알림 최소 간격은 0 이상이어야 합니다.");
         if (Notifications.MaxQueueLength < 1) errors.Add("알림 큐 길이는 1 이상이어야 합니다.");
+
+        if (Telegram.Enabled)
+        {
+            if (string.IsNullOrWhiteSpace(Telegram.BotToken)) errors.Add("텔레그램: 봇 토큰을 입력하세요.");
+            else if (!Telegram.BotToken.Contains(':')) errors.Add("텔레그램: 봇 토큰 형식이 올바르지 않습니다(숫자:문자 형태).");
+            if (string.IsNullOrWhiteSpace(Telegram.ChatId)) errors.Add("텔레그램: 채팅 ID를 입력하세요. [채팅 ID 찾기]를 눌러 자동으로 넣을 수 있습니다.");
+        }
 
         if (WindowOrder.Windows.Count > WindowOrderSettings.MaxEntries)
             errors.Add($"창 순서: 창은 최대 {WindowOrderSettings.MaxEntries}개까지 넣을 수 있습니다.");

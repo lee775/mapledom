@@ -79,6 +79,29 @@
                     </DockPanel>
                 </Grid>
             </TabItem>
+            <TabItem Header="텔레그램">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="2,0,8,0">
+                        <TextBlock Text="켜면 Windows 알림과 함께 텔레그램 봇 메시지도 갑니다. @BotFather로 봇을 만들어 토큰을 붙여 넣고, 그 봇에게 아무 메시지나 보낸 뒤 [채팅 ID 찾기]를 누르세요." TextWrapping="Wrap" Foreground="{StaticResource MutedText}" FontSize="11" Margin="0,2,0,10" />
+                        <CheckBox Content="텔레그램 알림 사용" IsChecked="{Binding Telegram.Enabled}" />
+                        <DockPanel Margin="0,12,0,7"><TextBlock Text="봇 토큰" Width="84" VerticalAlignment="Center" Foreground="{StaticResource MutedText}" /><TextBox Text="{Binding Telegram.BotToken, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="봇 토큰" /></DockPanel>
+                        <DockPanel Margin="0,0,0,7">
+                            <TextBlock Text="채팅 ID" Width="84" VerticalAlignment="Center" Foreground="{StaticResource MutedText}" />
+                            <Button DockPanel.Dock="Right" Content="채팅 ID 찾기" Click="OnFindChatId" MinWidth="88" Margin="5,0,0,0" />
+                            <TextBox Text="{Binding Telegram.ChatId, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="채팅 ID" />
+                        </DockPanel>
+                        <TextBlock Text="보낼 알림" FontWeight="SemiBold" Margin="0,12,0,6" />
+                        <CheckBox Content="1분 알림 (1분마다 메시지가 갑니다)" IsChecked="{Binding Telegram.SendMinute}" />
+                        <CheckBox Content="룬" IsChecked="{Binding Telegram.SendRune}" Margin="0,4,0,0" />
+                        <CheckBox Content="도핑" IsChecked="{Binding Telegram.SendDoping}" Margin="0,4,0,0" />
+                        <DockPanel Margin="0,16,0,0">
+                            <Button DockPanel.Dock="Left" Content="테스트 전송" Click="OnTelegramTest" ToolTip="편집 중인 토큰·채팅 ID로 메시지를 한 건 보냅니다 (저장하지 않음)" />
+                            <TextBlock Text="{Binding Telegram.Status}" VerticalAlignment="Center" Margin="10,0,0,0" Foreground="{StaticResource Accent}" FontSize="11" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+                        </DockPanel>
+                        <TextBlock Text="봇 토큰은 이 PC의 설정 파일에 평문으로 저장됩니다. 알림 도착은 인터넷 상태에 따라 1초 안팎 걸릴 수 있습니다." TextWrapping="Wrap" Foreground="{StaticResource MutedText}" FontSize="10" Margin="0,16,0,0" />
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
         </TabControl>
         <Expander Grid.Row="2" Header="최근 알림 (최대 5개)" Margin="0,9,0,0">
             <ScrollViewer MaxHeight="100"><ItemsControl ItemsSource="{Binding RecentNotifications}"><ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="11" Margin="0,3" /></DataTemplate></ItemsControl.ItemTemplate></ItemsControl></ScrollViewer>
