@@ -4,6 +4,7 @@ using MapleDom.App.ViewModels;
 using MapleDom.App.Infrastructure;
 using MapleDom.Core;
 using MapleDom.Core.Notifications;
+using MapleDom.Core.Timers;
 using MapleDom.Core.Settings;
 using MapleDom.Windows;
 
@@ -51,6 +52,21 @@ public partial class SettingsWindow : Window
         Activate();
     }
 
+    /// <summary>편집 중인 값으로 화면 알림 배너를 한 번 띄워 본다(저장하지 않음).</summary>
+    private void OnOverlayPreview(object sender, RoutedEventArgs args)
+    {
+        if (_main.Overlay is not { } overlay) return;
+        var errors = new List<string>();
+        var draft = ViewModel.Overlay.Build(errors);
+        if (errors.Count > 0) { ViewModel.SetErrors(errors); return; }
+
+        var saved = overlay.Settings;
+        overlay.Update(draft);
+        overlay.Show(new AlarmNotification("preview", "preview", AlarmKind.Main, "화면 알림 미리보기", "이 크기와 위치로 표시됩니다.", AlarmSound.Silent, AlarmScenario.Default, null));
+        // 저장 전이므로 설정은 되돌린다. 배너는 떠 있는 동안 유지된다.
+        overlay.Update(saved);
+    }
+
     /// <summary>봇이 받은 최근 메시지에서 채팅 ID를 찾아 넣는다.</summary>
     private async void OnFindChatId(object sender, RoutedEventArgs args)
     {
@@ -85,6 +101,7 @@ public partial class SettingsWindow : Window
             _service.ApplySettings(settings);
             _main.WindowOrderKeeper?.Update(settings.WindowOrder);
             _main.Telegram?.Update(settings.Telegram);
+            _main.Overlay?.Update(settings.Overlay);
             SettingsStore.Save(settings);
             settingsSaved = true;
             uiSettings.Save();
@@ -95,6 +112,7 @@ public partial class SettingsWindow : Window
             _service.ApplySettings(previous);
             _main.WindowOrderKeeper?.Update(previous.WindowOrder);
             _main.Telegram?.Update(previous.Telegram);
+            _main.Overlay?.Update(previous.Overlay);
             if (settingsSaved)
             {
                 try { SettingsStore.Save(previous); }

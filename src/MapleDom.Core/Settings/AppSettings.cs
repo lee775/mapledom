@@ -23,7 +23,7 @@ public sealed class NotificationProfile
     public double ExpireSeconds { get; set; } = 10;
 }
 
-/// <summary>1분 알림(반복형) 타이머 설정. 확인 버튼 없이 Interval + Gap 주기로 계속 울린다.</summary>
+/// <summary>30초 알림(반복형) 타이머 설정. 확인 버튼 없이 Interval + Gap 주기로 계속 울린다.</summary>
 public sealed class RepeatTimerSettings
 {
     public string Name { get; set; } = "";
@@ -80,7 +80,7 @@ public sealed class TelegramSettings
     /// <summary>받을 사람(또는 그룹)의 채팅 ID.</summary>
     public string ChatId { get; set; } = "";
 
-    /// <summary>1분 알림도 보낼지. 1분마다 메시지가 가므로 기본은 끔.</summary>
+    /// <summary>30초 알림도 보낼지. 30초마다 메시지가 가므로 기본은 끔.</summary>
     public bool SendMinute { get; set; }
 
     public bool SendRune { get; set; } = true;
@@ -91,6 +91,34 @@ public sealed class TelegramSettings
     public bool IsConfigured => !string.IsNullOrWhiteSpace(BotToken) && !string.IsNullOrWhiteSpace(ChatId);
 
     public TelegramSettings Clone() => (TelegramSettings)MemberwiseClone();
+}
+
+/// <summary>화면 알림 배너가 뜨는 위치.</summary>
+public enum OverlayPosition
+{
+    Top,
+    Center,
+    Bottom,
+}
+
+/// <summary>
+/// 화면 알림(오버레이 배너) 설정. 알림이 울릴 때 화면에 크게 띄워 Windows 토스트보다 눈에 잘 띄게 한다.
+/// 배너는 클릭을 통과시키고 포커스를 뺏지 않으므로 게임 조작에 방해가 되지 않는다.
+/// </summary>
+public sealed class OverlaySettings
+{
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>배너가 떠 있는 시간(초).</summary>
+    public double DurationSeconds { get; set; } = 4;
+
+    public OverlayPosition Position { get; set; } = OverlayPosition.Top;
+
+    /// <summary>제목 글자 크기(px). 본문은 이보다 작게 그려진다.</summary>
+    public double FontSize { get; set; } = 46;
+
+    /// <summary>배너 불투명도(0.3~1).</summary>
+    public double Opacity { get; set; } = 0.92;
 }
 
 /// <summary>실행 중인 창 하나를 가리키는 조건. 프로세스 이름(확장자 없이) + 제목 포함 문자열, 대소문자 무시. 둘 다 비면 "지정 안 함".</summary>
@@ -142,6 +170,8 @@ public sealed class AppSettings
 
     public TelegramSettings Telegram { get; set; } = new();
 
+    public OverlaySettings Overlay { get; set; } = new();
+
     public static AppSettings CreateDefault() => new();
 
     /// <summary>비어 있거나 0 이하인 값을 기본값으로 채운다(구버전 파일, 손편집 대비). 자기 자신을 돌려준다.</summary>
@@ -154,6 +184,12 @@ public sealed class AppSettings
         if (Notifications is null) Notifications = new NotificationSettings();
         if (!(Notifications.MinSpacingSeconds >= 0)) Notifications.MinSpacingSeconds = 2;
         if (Notifications.MaxQueueLength < 1) Notifications.MaxQueueLength = 16;
+
+        if (Overlay is null) Overlay = new OverlaySettings();
+        if (!(Overlay.DurationSeconds > 0)) Overlay.DurationSeconds = 4;
+        if (!(Overlay.FontSize > 0)) Overlay.FontSize = 46;
+        if (!(Overlay.Opacity > 0)) Overlay.Opacity = 0.92;
+        if (!Enum.IsDefined(Overlay.Position)) Overlay.Position = OverlayPosition.Top;
 
         if (Telegram is null) Telegram = new TelegramSettings();
         Telegram.BotToken = (Telegram.BotToken ?? "").Trim();
@@ -182,6 +218,13 @@ public sealed class AppSettings
 
         if (!(Notifications.MinSpacingSeconds >= 0)) errors.Add("알림 최소 간격은 0 이상이어야 합니다.");
         if (Notifications.MaxQueueLength < 1) errors.Add("알림 큐 길이는 1 이상이어야 합니다.");
+
+        if (Overlay.Enabled)
+        {
+            if (!(Overlay.DurationSeconds is > 0 and <= 60)) errors.Add("화면 알림: 표시 시간은 0보다 크고 60초 이하여야 합니다.");
+            if (!(Overlay.FontSize is >= 12 and <= 200)) errors.Add("화면 알림: 글자 크기는 12~200 사이여야 합니다.");
+            if (!(Overlay.Opacity is >= 0.3 and <= 1)) errors.Add("화면 알림: 불투명도는 30~100% 사이여야 합니다.");
+        }
 
         if (Telegram.Enabled)
         {
@@ -252,19 +295,19 @@ public sealed class AppSettings
     }
 }
 
-/// <summary>기본값. 1분 알림 58초+휴식 2초(주기 60초), 룬 15분, 도핑 30분-5초, 리마인드 1분, 알림 유지 10초.</summary>
+/// <summary>기본값. 30초 알림 28초+휴식 2초(주기 30초), 룬 15분, 도핑 30분-5초, 리마인드 1분, 알림 유지 10초.</summary>
 public static class SettingsDefaults
 {
     public static RepeatTimerSettings Minute() => new()
     {
-        Name = "1분",
-        IntervalSeconds = 58,   // 58초 카운트 + 2초 휴식 = 정확히 60초 주기
+        Name = "30초",
+        IntervalSeconds = 28,   // 28초 카운트 + 2초 휴식 = 정확히 30초 주기
         GapSeconds = 2,
         AutoStart = false,
         Notification = new NotificationProfile
         {
-            Title = "1분 알림",
-            MainMessage = "1분 지났습니다. 움직이세요!",
+            Title = "30초 알림",
+            MainMessage = "30초 지났습니다. 움직이세요!",
             ReminderMessage = "",
             Sound = AlarmSound.Default,
             ReminderSound = AlarmSound.Default,

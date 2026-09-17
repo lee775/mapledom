@@ -1,13 +1,13 @@
 # MapleDom
 
-메이플스토리용 초경량 타이머/창 관리 도구. **320×300 WPF 창**에 **창 순서(Z-order) 적용/해제** 카드와 1분·룬·도핑 타이머 카드가 있고, 알림은 Windows 토스트로 온다.
+메이플스토리용 초경량 타이머/창 관리 도구. **320×300 WPF 창**에 **창 순서(Z-order) 적용/해제** 카드와 30초·룬·도핑 타이머 카드가 있고, 알림은 Windows 토스트·화면 배너·텔레그램으로 온다.
 UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참고한다.
 
 ## 타이머 3종
 
 | 타이머 | 종류 | 기본값 | 동작 |
 |---|---|---|---|
-| 1분 | 반복형 | 58초 + 휴식 2초 | 58초 카운트 → 알림 → 2초 쉬고 다시 58초. 알림 주기는 정확히 60초. 확인 버튼 없이 계속 반복. |
+| 30초 | 반복형 | 28초 + 휴식 2초 | 28초 카운트 → 알림 → 2초 쉬고 다시 28초. 알림 주기는 정확히 30초. 확인 버튼 없이 계속 반복. |
 | 룬 | 확인형 | 15분, 리마인드 1분 | 15분 만기 → 알림 → **[룬 깟음]** 전까지 1분마다 재알림. 누르면 15분 리셋. |
 | 도핑 | 확인형 | 30분 − 5초, 리마인드 1분 | **[도핑했음]** 누르면 29분 55초 뒤 알림(버튼 누르는 시간 보정). 안 누르면 1분마다 재알림. |
 
@@ -32,13 +32,24 @@ UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참�
 - 구현: `MapleDom.Core.Windowing`(매칭, 순수 로직) + `MapleDom.Windows.WindowArranger`(`SetWindowPos`, `SWP_NOACTIVATE`) + `WindowOrderKeeper`(`SetWinEventHook` 포그라운드 감시).
   실측으로 확인한 Windows 특성: 다른 프로세스 창은 `HWND_TOP`으로는 활성 창 위로 올라가지 않으므로 맨 앞은 "항상 위 켰다 끄기", 맨 뒤는 `HWND_BOTTOM`, 상대 순서는 `hWndInsertAfter`=핸들로 잡는다.
 
+## 화면 알림 배너
+
+Windows 토스트가 작아서 놓치기 쉬우면 설정 > **알림 · 창** 탭의 **화면 알림**을 쓴다(기본 켜짐).
+알림이 울릴 때 화면에 큰 배너가 뜬다.
+
+- **클릭을 통과시키고 포커스를 뺏지 않는다**(`WS_EX_NOACTIVATE | WS_EX_TRANSPARENT`). 배너가 떠 있어도 게임 조작이 그대로 된다.
+- 표시 시간, 위치(위/가운데/아래), 글자 크기, 불투명도를 조절하고 [배너 미리보기]로 확인할 수 있다.
+- 타이머별로 테두리 색이 다르다(룬 초록, 도핑 빨강, 30초 주황).
+- 항상 위 층에 그려지므로 창 모드·테두리 없는 전체화면 게임 위에도 뜬다(독점 전체화면은 제외).
+- 구현: `MapleDom.App.AlertOverlayWindow` + `Infrastructure.AlertOverlay`.
+
 ## 텔레그램 알림 (선택)
 
 자리를 비웠을 때도 알림을 받고 싶으면 설정 > **텔레그램** 탭을 쓴다.
 
 1. 텔레그램에서 `@BotFather`에게 `/newbot` 으로 봇을 만들고 받은 **토큰**을 붙여 넣는다.
 2. 만든 봇과의 대화창에서 **아무 메시지나 한 번 보낸 뒤** [채팅 ID 찾기]를 누르면 채팅 ID가 자동으로 채워진다.
-3. 보낼 알림을 고른다(기본: 룬·도핑만. 1분 알림은 1분마다 메시지가 가므로 기본 꺼짐).
+3. 보낼 알림을 고른다(기본: 룬·도핑만. 30초 알림은 30초마다 메시지가 가므로 기본 꺼짐).
 4. [테스트 전송]으로 확인하고 저장한다.
 
 - 전송은 별도 큐/스레드에서 이뤄져 네트워크가 느려도 Windows 토스트가 밀리지 않는다. 실패하면 메인 창 경고 줄에 사유가 뜬다.
@@ -142,14 +153,15 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 
 ```json
 {
-  "Minute": { "Name": "1분", "IntervalSeconds": 58, "GapSeconds": 2, "AutoStart": false,
-    "Notification": { "Title": "1분 알림", "MainMessage": "1분 지났습니다. 움직이세요!",
+  "Minute": { "Name": "30초", "IntervalSeconds": 28, "GapSeconds": 2, "AutoStart": false,
+    "Notification": { "Title": "30초 알림", "MainMessage": "30초 지났습니다. 움직이세요!",
       "Sound": "Default", "Scenario": "Default", "ExpireSeconds": 10 } },
   "Rune":   { "Name": "룬",  "IntervalSeconds": 900,  "LeadSeconds": 0, "ReminderSeconds": 60, "AutoStart": false,
     "Notification": { "Title": "룬 타이머", "MainMessage": "룬 생성! 룬을 까고 [룬 깟음]을 누르세요.",
       "ReminderMessage": "룬 아직 안 깠어요! (+{overdue} 경과)", "Sound": "Reminder", "Scenario": "Reminder", "ExpireSeconds": 10 } },
   "Doping": { "Name": "도핑", "IntervalSeconds": 1800, "LeadSeconds": 5, "ReminderSeconds": 60, "AutoStart": false },
   "Notifications": { "Enabled": true, "MinSpacingSeconds": 2, "MaxQueueLength": 16 },
+  "Overlay": { "Enabled": true, "DurationSeconds": 4, "Position": "Top", "FontSize": 46, "Opacity": 0.92 },
   "Telegram": { "Enabled": false, "BotToken": "", "ChatId": "", "SendMinute": false, "SendRune": true, "SendDoping": true },
   "WindowOrder": { "Topmost": false }
 }
@@ -196,4 +208,4 @@ SettingsStore.Save(s);
 - 앱별 알림이 꺼져 있으면 토스트가 오지 않는다. `--selftest` 로 확인할 수 있다.
 - 토스트 등록은 exe 경로 기준이라 exe 위치를 옮기면 알림 센터에 새 앱 항목이 생긴다(동작에는 문제 없음).
 - 도핑 타이머는 시작 버튼을 눌러도 29분 55초로 예약된다(시작 = 도핑한 시점으로 간주).
-- 1분 타이머는 확인 버튼이 없다. 멈추려면 카드의 [정지]를 누른다.
+- 30초 타이머는 확인 버튼이 없다. 멈추려면 카드의 [정지]를 누른다.

@@ -15,6 +15,7 @@ public partial class App : Application
     private TimerService? _service;
     private WindowOrderKeeper? _windowOrder;
     private TelegramNotifier? _telegram;
+    private AlertOverlay? _overlay;
     private MainViewModel? _viewModel;
     private MainWindow? _window;
     private TrayIcon? _tray;
@@ -54,6 +55,9 @@ public partial class App : Application
         _telegram.Update(_service.Settings.Telegram);
         _windowOrder = new WindowOrderKeeper();
         _viewModel = new MainViewModel(_service, uiSettings, Dispatcher, _windowOrder, _telegram);
+        _overlay = new AlertOverlay(Dispatcher);
+        _overlay.Update(_service.Settings.Overlay);
+        _viewModel.Overlay = _overlay;
         if (settingsError is not null) { ErrorLog.Write(settingsError); _viewModel.ShowWarning("타이머 설정을 읽지 못해 기본값을 사용합니다"); }
         if (uiError is not null) { ErrorLog.Write(uiError); _viewModel.ShowWarning("창 설정을 읽지 못해 기본값을 사용합니다"); }
 
@@ -89,6 +93,7 @@ public partial class App : Application
         finally
         {
             _tray?.Dispose();
+            _overlay?.Dispose();
             _windowOrder?.Dispose();
             _telegram?.Dispose();
             _viewModel?.Dispose();

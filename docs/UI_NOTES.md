@@ -129,3 +129,13 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 - `ShouldSend(settings, timerId)`가 켜짐·설정 완료·타이머별 토글을 판단한다. 기본은 룬·도핑만 켜짐(1분은 스팸이라 꺼둠).
 - 설정 저장 시 `SettingsWindow.OnSave`가 `_main.Telegram?.Update(...)`로 실행 중인 알림기에 반영하고, 저장 실패 롤백에서도 되돌린다.
 - [채팅 ID 찾기]/[테스트 전송]은 `Task.Run` + `await`(async void 핸들러)로 UI 스레드를 막지 않는다. 둘 다 저장 없이 편집 중인 값으로 동작한다.
+
+## 30초 알림 · 화면 알림 배너 (2026-09-17, Claude)
+
+- 반복 타이머 기본값을 **28초 + 휴식 2초(주기 30초)**, 이름 "30초"로 바꿨다. 설정의 JSON 키(`Minute`)와 타이머 id(`minute`)는 기존 설정 파일 호환을 위해 그대로 둔다.
+- **화면 알림 배너**(`AlertOverlayWindow` + `Infrastructure.AlertOverlay`): 알림이 울리면 화면에 큰 배너를 띄운다. Windows 토스트가 작아 놓치는 문제와 전체화면 게임에서 토스트가 안 보이는 문제를 함께 해결한다.
+  - 확장 스타일 `WS_EX_NOACTIVATE | WS_EX_TRANSPARENT | WS_EX_TOOLWINDOW` + `ShowActivated=False`, `IsHitTestVisible=False` → 포커스를 뺏지 않고 클릭을 통과시키며 Alt+Tab에도 안 나온다.
+  - 표시할 때마다 `Topmost` 를 껐다 켜서 다른 '항상 위' 창(창 순서 기능 포함)보다 앞에 세운다.
+  - 설정: 알림·창 탭의 "화면 알림"(사용, 표시 시간, 위치 위/가운데/아래, 글자 크기, 불투명도, [배너 미리보기]).
+  - `MainViewModel.RecordNotification`에서 띄우므로 음소거·알림 끔이면 배너도 안 뜬다. 테스트 알림에서도 뜬다.
+- 검증 도구에 오버레이 검사 4개와 `overlay-banner.png` 렌더가 추가돼 총 62개다.

@@ -17,6 +17,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
     private readonly DispatcherTimer _refreshTimer;
     private readonly WindowOrderKeeper? _keeper;
     private readonly TelegramNotifier? _telegram;
+    private AlertOverlay? _overlay;
     private bool _visible;
     private bool _disposed;
     private string _warning = "";
@@ -57,6 +58,13 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     /// <summary>텔레그램 알림기. 설정 저장 시 Update를 불러 준다. null이면 텔레그램 기능 없음(검증 도구).</summary>
     public TelegramNotifier? Telegram => _telegram;
+
+    /// <summary>화면 알림 배너. App이 넣어 준다. null이면 배너 없음(검증 도구).</summary>
+    public AlertOverlay? Overlay
+    {
+        get => _overlay;
+        set => _overlay = value;
+    }
     public ObservableCollection<string> RecentNotifications { get; } = [];
     public RelayCommand StartAllCommand { get; }
     public RelayCommand StopAllCommand { get; }
@@ -201,6 +209,7 @@ public sealed class MainViewModel : ObservableObject, IDisposable
 
     private void RecordNotification(AlarmNotification notification)
     {
+        _overlay?.Show(notification);
         RecentNotifications.Insert(0, $"{DateTime.Now:HH:mm:ss}  {notification.Title} · {notification.Message}");
         while (RecentNotifications.Count > 5) RecentNotifications.RemoveAt(5);
     }

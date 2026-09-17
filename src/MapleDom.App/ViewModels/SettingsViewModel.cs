@@ -150,6 +150,43 @@ public sealed class TelegramEditor : ObservableObject
     };
 }
 
+/// <summary>설정 창 "알림 · 창" 탭의 화면 알림(배너) 편집 상태.</summary>
+public sealed class OverlayEditor : ObservableObject
+{
+    private bool _enabled = true;
+    private string _duration = "4";
+    private OverlayPosition _position = OverlayPosition.Top;
+    private double _fontSize = 46;
+    private double _opacity = 0.92;
+
+    public bool Enabled { get => _enabled; set => Set(ref _enabled, value); }
+    public string Duration { get => _duration; set => Set(ref _duration, value); }
+    public OverlayPosition Position { get => _position; set => Set(ref _position, value); }
+    public double FontSize { get => _fontSize; set => Set(ref _fontSize, value); }
+    public double Opacity { get => _opacity; set => Set(ref _opacity, value); }
+
+    public static IReadOnlyList<Choice<OverlayPosition>> Positions { get; } =
+    [new(OverlayPosition.Top, "위쪽"), new(OverlayPosition.Center, "가운데"), new(OverlayPosition.Bottom, "아래쪽")];
+
+    public static OverlayEditor From(OverlaySettings settings) => new()
+    {
+        Enabled = settings.Enabled,
+        Duration = TimerSettingsEditor.Format(settings.DurationSeconds),
+        Position = settings.Position,
+        FontSize = settings.FontSize,
+        Opacity = settings.Opacity,
+    };
+
+    public OverlaySettings Build(List<string> errors) => new()
+    {
+        Enabled = Enabled,
+        DurationSeconds = TimerSettingsEditor.Number(Duration, "화면 알림: 표시 시간", errors),
+        Position = Enum.IsDefined(Position) ? Position : OverlayPosition.Top,
+        FontSize = FontSize,
+        Opacity = Opacity,
+    };
+}
+
 public sealed class SettingsViewModel : ObservableObject
 {
     private TimerSettingsEditor _minute = null!;
@@ -157,6 +194,7 @@ public sealed class SettingsViewModel : ObservableObject
     private TimerSettingsEditor _doping = null!;
     private WindowOrderEditor _windowOrder = null!;
     private TelegramEditor _telegram = null!;
+    private OverlayEditor _overlay = null!;
     private bool _notificationsEnabled;
     private string _minSpacing = "";
     private bool _topmost;
@@ -179,6 +217,7 @@ public sealed class SettingsViewModel : ObservableObject
     public TimerSettingsEditor Doping { get => _doping; private set => Set(ref _doping, value); }
     public WindowOrderEditor WindowOrder { get => _windowOrder; private set => Set(ref _windowOrder, value); }
     public TelegramEditor Telegram { get => _telegram; private set => Set(ref _telegram, value); }
+    public OverlayEditor Overlay { get => _overlay; private set => Set(ref _overlay, value); }
     public bool NotificationsEnabled { get => _notificationsEnabled; set => Set(ref _notificationsEnabled, value); }
     public string MinSpacing { get => _minSpacing; set => Set(ref _minSpacing, value); }
     public bool Topmost { get => _topmost; set => Set(ref _topmost, value); }
@@ -196,6 +235,7 @@ public sealed class SettingsViewModel : ObservableObject
         Doping = TimerSettingsEditor.From(settings.Doping);
         WindowOrder = WindowOrderEditor.From(settings.WindowOrder);
         Telegram = TelegramEditor.From(settings.Telegram);
+        Overlay = OverlayEditor.From(settings.Overlay);
         NotificationsEnabled = settings.Notifications.Enabled;
         MinSpacing = TimerSettingsEditor.Format(settings.Notifications.MinSpacingSeconds);
         Topmost = uiSettings.Topmost;
@@ -225,6 +265,7 @@ public sealed class SettingsViewModel : ObservableObject
         settings.Notifications.MinSpacingSeconds = TimerSettingsEditor.Number(MinSpacing, "알림 최소 간격", errors);
         settings.WindowOrder = WindowOrder.Build();
         settings.Telegram = Telegram.Build();
+        settings.Overlay = Overlay.Build(errors);
         errors.AddRange(settings.Validate());
         foreach (var timer in new[] { settings.Rune, settings.Doping })
         {

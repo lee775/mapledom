@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:MapleDom.App.Controls"
+        xmlns:vm="clr-namespace:MapleDom.App.ViewModels"
         Title="MapleDom 설정" Width="570" Height="680" MinWidth="520" MinHeight="420" Style="{StaticResource {x:Type Window}}"
         WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
     <Grid Margin="18,14" Background="{StaticResource Surface}">
@@ -10,7 +11,7 @@
         </Grid.RowDefinitions>
         <StackPanel Margin="0,0,0,13"><TextBlock Text="설정" FontSize="20" FontWeight="SemiBold" /><TextBlock Text="시간은 초 단위입니다. 저장하면 실행 중인 타이머와 창 순서에 바로 반영됩니다." Foreground="{StaticResource MutedText}" Margin="0,5,0,0" FontSize="11" /></StackPanel>
         <TabControl x:Name="SettingsTabs" Grid.Row="1">
-            <TabItem Header="1분"><controls:TimerEditor DataContext="{Binding Minute}" /></TabItem>
+            <TabItem Header="30초"><controls:TimerEditor DataContext="{Binding Minute}" /></TabItem>
             <TabItem Header="룬"><controls:TimerEditor DataContext="{Binding Rune}" /></TabItem>
             <TabItem Header="도핑"><controls:TimerEditor DataContext="{Binding Doping}" /></TabItem>
             <TabItem Header="알림 · 창">
@@ -19,7 +20,15 @@
                         <TextBlock Text="알림" FontWeight="SemiBold" Margin="0,2,0,6" />
                         <CheckBox Content="Windows 알림 사용" IsChecked="{Binding NotificationsEnabled}" />
                         <DockPanel Margin="0,8,0,15"><TextBlock Text="알림 최소 간격 (초)" Width="160" /><TextBox Text="{Binding MinSpacing, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="알림 최소 간격 (초)" /></DockPanel>
-                        <TextBlock Text="창" FontWeight="SemiBold" Margin="0,6,0,6" />
+                        <TextBlock Text="화면 알림" FontWeight="SemiBold" Margin="0,18,0,6" />
+                        <TextBlock Text="알림이 울릴 때 화면에 큰 배너를 띄웁니다. 클릭을 통과시키고 포커스를 뺏지 않아 게임 조작에 방해가 되지 않습니다." TextWrapping="Wrap" Foreground="{StaticResource MutedText}" FontSize="11" Margin="0,0,0,7" />
+                        <CheckBox Content="화면 알림 배너 사용" IsChecked="{Binding Overlay.Enabled}" />
+                        <DockPanel Margin="0,9,0,0"><TextBlock Text="표시 시간 (초)" Width="110" VerticalAlignment="Center" /><TextBox Text="{Binding Overlay.Duration, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="화면 알림 표시 시간" /></DockPanel>
+                        <DockPanel Margin="0,7,0,0"><TextBlock Text="위치" Width="110" VerticalAlignment="Center" /><ComboBox ItemsSource="{x:Static vm:OverlayEditor.Positions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Overlay.Position}" AutomationProperties.Name="화면 알림 위치" /></DockPanel>
+                        <DockPanel Margin="0,9,0,0"><TextBlock Text="글자 크기" Width="110" VerticalAlignment="Center" /><TextBlock DockPanel.Dock="Right" Text="{Binding Overlay.FontSize, StringFormat={}{0:F0}}" Width="34" TextAlignment="Right" /><Slider Minimum="20" Maximum="120" Value="{Binding Overlay.FontSize}" TickFrequency="2" SmallChange="2" IsSnapToTickEnabled="True" AutomationProperties.Name="화면 알림 글자 크기" /></DockPanel>
+                        <DockPanel Margin="0,7,0,0"><TextBlock Text="불투명도" Width="110" VerticalAlignment="Center" /><TextBlock DockPanel.Dock="Right" Text="{Binding Overlay.Opacity, StringFormat={}{0:P0}}" Width="45" TextAlignment="Right" /><Slider Minimum="0.3" Maximum="1" Value="{Binding Overlay.Opacity}" TickFrequency="0.02" SmallChange="0.02" IsSnapToTickEnabled="True" AutomationProperties.Name="화면 알림 불투명도" /></DockPanel>
+                        <Button Content="배너 미리보기" Click="OnOverlayPreview" HorizontalAlignment="Left" Margin="110,10,0,0" />
+                        <TextBlock Text="창" FontWeight="SemiBold" Margin="0,18,0,6" />
                         <CheckBox Content="항상 위에 표시" IsChecked="{Binding Topmost}" />
                         <CheckBox Content="닫기 버튼을 누르면 트레이로 숨기기" IsChecked="{Binding MinimizeToTray}" />
                         <TextBlock Text="창 투명도" Margin="0,12,0,4" />
@@ -91,7 +100,7 @@
                             <TextBox Text="{Binding Telegram.ChatId, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="채팅 ID" />
                         </DockPanel>
                         <TextBlock Text="보낼 알림" FontWeight="SemiBold" Margin="0,12,0,6" />
-                        <CheckBox Content="1분 알림 (1분마다 메시지가 갑니다)" IsChecked="{Binding Telegram.SendMinute}" />
+                        <CheckBox Content="30초 알림 (30초마다 메시지가 갑니다)" IsChecked="{Binding Telegram.SendMinute}" />
                         <CheckBox Content="룬" IsChecked="{Binding Telegram.SendRune}" Margin="0,4,0,0" />
                         <CheckBox Content="도핑" IsChecked="{Binding Telegram.SendDoping}" Margin="0,4,0,0" />
                         <DockPanel Margin="0,16,0,0">
