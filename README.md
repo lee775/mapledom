@@ -1,14 +1,15 @@
 # MapleDom
 
-메이플스토리용 초경량 타이머/창 관리 도구. **320×246 WPF 창**에 룬·도핑 타이머와 **창 순서(Z-order) 적용/해제** 카드가 있고, 알림은 Windows 토스트로 온다.
+메이플스토리용 초경량 타이머/창 관리 도구. **320×300 WPF 창**에 **창 순서(Z-order) 적용/해제** 카드와 1분·룬·도핑 타이머 카드가 있고, 알림은 Windows 토스트로 온다.
 UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참고한다.
 
-## 타이머 2종
+## 타이머 3종
 
-| 타이머 | 기본값 | 동작 |
-|---|---|---|
-| 룬 | 15분, 리마인드 1분 | 15분 만기 → 알림 → **[룬 깟음]** 전까지 1분마다 재알림. 누르면 15분 리셋. |
-| 도핑 | 30분 − 5초, 리마인드 1분 | **[도핑했음]** 누르면 29분 55초 뒤 알림(버튼 누르는 시간 보정). 안 누르면 1분마다 재알림. |
+| 타이머 | 종류 | 기본값 | 동작 |
+|---|---|---|---|
+| 1분 | 반복형 | 60초 (+휴식 0초) | 60초마다 알림. 확인 버튼 없이 계속 반복. 휴식 시간을 주면 주기는 간격 + 휴식. |
+| 룬 | 확인형 | 15분, 리마인드 1분 | 15분 만기 → 알림 → **[룬 깟음]** 전까지 1분마다 재알림. 누르면 15분 리셋. |
+| 도핑 | 확인형 | 30분 − 5초, 리마인드 1분 | **[도핑했음]** 누르면 29분 55초 뒤 알림(버튼 누르는 시간 보정). 안 누르면 1분마다 재알림. |
 
 - 모든 값은 설정 파일(`%LocalAppData%\MapleDom\settings.json`)에서 바꿀 수 있다.
 - 시작 버튼은 확인 버튼과 같은 의미다(시작 시점 = 룬을 깠거나 도핑한 시점).
@@ -55,7 +56,7 @@ src/
   MapleDom.Windows/     WindowsToastNotifier(토스트), WindowArranger/ForegroundWatcher/WindowOrderKeeper(창 순서, Win32)
   MapleDom.Cli/         콘솔 검증 도구
 tests/
-  MapleDom.Core.Tests/  xunit 89개
+  MapleDom.Core.Tests/  xunit 92개
 docs/
   UI_PROMPT.md          최초 UI 구현 때 Codex에게 준 프롬프트(이력)
   UI_NOTES.md           UI 사용법, 구현 결정, 검증 결과
@@ -107,7 +108,7 @@ dotnet run --project src/MapleDom.Cli -c Release                   # 실제 설�
 dotnet run --project src/MapleDom.Cli -c Release -- --run 60 --silent   # 60초 비대화형, 토스트 없이 로그만
 ```
 
-대화형 키: `1/2` 각 타이머 토글, `r` 룬 깟음, `d` 도핑했음, `a` 전체 시작, `s` 전체 정지, `m` 음소거, `t` 테스트 알림, `q` 종료.
+대화형 키: `1/2/3` 각 타이머 토글, `r` 룬 깟음, `d` 도핑했음, `a` 전체 시작, `s` 전체 정지, `m` 음소거, `t` 테스트 알림, `q` 종료.
 
 ## 앱 아이콘
 
@@ -126,6 +127,9 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 
 ```json
 {
+  "Minute": { "Name": "1분", "IntervalSeconds": 60, "GapSeconds": 0, "AutoStart": false,
+    "Notification": { "Title": "1분 알림", "MainMessage": "1분 지났습니다. 움직이세요!",
+      "Sound": "Default", "Scenario": "Default", "ExpireSeconds": 10 } },
   "Rune":   { "Name": "룬",  "IntervalSeconds": 900,  "LeadSeconds": 0, "ReminderSeconds": 60, "AutoStart": false,
     "Notification": { "Title": "룬 타이머", "MainMessage": "룬 생성! 룬을 까고 [룬 깟음]을 누르세요.",
       "ReminderMessage": "룬 아직 안 깠어요! (+{overdue} 경과)", "Sound": "Reminder", "Scenario": "Reminder", "ExpireSeconds": 10 } },
@@ -176,3 +180,4 @@ SettingsStore.Save(s);
 - 앱별 알림이 꺼져 있으면 토스트가 오지 않는다. `--selftest` 로 확인할 수 있다.
 - 토스트 등록은 exe 경로 기준이라 exe 위치를 옮기면 알림 센터에 새 앱 항목이 생긴다(동작에는 문제 없음).
 - 도핑 타이머는 시작 버튼을 눌러도 29분 55초로 예약된다(시작 = 도핑한 시점으로 간주).
+- 1분 타이머는 확인 버튼이 없다. 멈추려면 카드의 [정지]를 누른다.

@@ -23,6 +23,21 @@ public sealed class NotificationProfile
     public double ExpireSeconds { get; set; } = 10;
 }
 
+/// <summary>1분 알림(반복형) 타이머 설정. 확인 버튼 없이 Interval + Gap 주기로 계속 울린다.</summary>
+public sealed class RepeatTimerSettings
+{
+    public string Name { get; set; } = "";
+
+    public double IntervalSeconds { get; set; }
+
+    /// <summary>알림 후 다음 카운트까지의 휴식(초). 알람 주기는 Interval + Gap.</summary>
+    public double GapSeconds { get; set; }
+
+    public bool AutoStart { get; set; }
+
+    public NotificationProfile Notification { get; set; } = new();
+}
+
 /// <summary>룬/도핑(확인형) 타이머 설정.</summary>
 public sealed class AckTimerSettings
 {
@@ -82,11 +97,13 @@ public sealed class WindowOrderSettings
 
 public sealed class AppSettings
 {
-    public const int CurrentSchemaVersion = 2;
+    public const int CurrentSchemaVersion = 3;
 
     public static readonly TimeSpan MaxInterval = TimeSpan.FromHours(24);
 
     public int SchemaVersion { get; set; } = CurrentSchemaVersion;
+
+    public RepeatTimerSettings Minute { get; set; } = SettingsDefaults.Minute();
 
     public AckTimerSettings Rune { get; set; } = SettingsDefaults.Rune();
 
@@ -101,6 +118,7 @@ public sealed class AppSettings
     /// <summary>비어 있거나 0 이하인 값을 기본값으로 채운다(구버전 파일, 손편집 대비). 자기 자신을 돌려준다.</summary>
     public AppSettings Normalize()
     {
+        Minute = NormalizeRepeat(Minute, SettingsDefaults.Minute());
         Rune = NormalizeAck(Rune, SettingsDefaults.Rune());
         Doping = NormalizeAck(Doping, SettingsDefaults.Doping());
 
@@ -125,6 +143,7 @@ public sealed class AppSettings
     public IReadOnlyList<string> Validate()
     {
         var errors = new List<string>();
+        ValidateRepeat(Minute, errors);
         ValidateAck(Rune, errors);
         ValidateAck(Doping, errors);
 
@@ -142,6 +161,16 @@ public sealed class AppSettings
     }
 
     public AppSettings Clone() => SettingsStore.Deserialize(SettingsStore.Serialize(this));
+
+    private static RepeatTimerSettings NormalizeRepeat(RepeatTimerSettings? s, RepeatTimerSettings d)
+    {
+        if (s is null) return d;
+        if (string.IsNullOrWhiteSpace(s.Name)) s.Name = d.Name;
+        if (!(s.IntervalSeconds > 0)) s.IntervalSeconds = d.IntervalSeconds;
+        if (!(s.GapSeconds >= 0)) s.GapSeconds = d.GapSeconds;
+        s.Notification = NormalizeProfile(s.Notification, d.Notification);
+        return s;
+    }
 
     private static AckTimerSettings NormalizeAck(AckTimerSettings? s, AckTimerSettings d)
     {
@@ -164,6 +193,14 @@ public sealed class AppSettings
         return p;
     }
 
+    private static void ValidateRepeat(RepeatTimerSettings s, List<string> errors)
+    {
+        var label = s.Name;
+        if (!(s.IntervalSeconds > 0)) errors.Add($"{label}: 간격은 0보다 커야 합니다.");
+        if (s.IntervalSeconds > MaxInterval.TotalSeconds) errors.Add($"{label}: 간격은 24시간 이하여야 합니다.");
+        if (!(s.GapSeconds >= 0)) errors.Add($"{label}: 휴식 시간은 0 이상이어야 합니다.");
+    }
+
     private static void ValidateAck(AckTimerSettings s, List<string> errors)
     {
         var label = s.Name;
@@ -175,9 +212,27 @@ public sealed class AppSettings
     }
 }
 
-/// <summary>사용자가 요청한 기본값. 룬 15분, 도핑 30분-5초, 리마인드 1분, 알림 유지 10초.</summary>
+/// <summary>기본값. 1분 알림 60초, 룬 15분, 도핑 30분-5초, 리마인드 1분, 알림 유지 10초.</summary>
 public static class SettingsDefaults
 {
+    public static RepeatTimerSettings Minute() => new()
+    {
+        Name = "1분",
+        IntervalSeconds = 60,
+        GapSeconds = 0,
+        AutoStart = false,
+        Notification = new NotificationProfile
+        {
+            Title = "1분 알림",
+            MainMessage = "1분 지났습니다. 움직이세요!",
+            ReminderMessage = "",
+            Sound = AlarmSound.Default,
+            ReminderSound = AlarmSound.Default,
+            Scenario = AlarmScenario.Default,
+            ExpireSeconds = 10,
+        },
+    };
+
     public static AckTimerSettings Rune() => new()
     {
         Name = "룬",

@@ -41,6 +41,9 @@ public class SettingsTests
     {
         var s = SettingsStore.Load(TempPath());
 
+        Assert.Equal(60, s.Minute.IntervalSeconds);
+        Assert.Equal(0, s.Minute.GapSeconds);
+        Assert.Equal("1분", s.Minute.Name);
         Assert.Equal(900, s.Rune.IntervalSeconds);
         Assert.Equal(1800, s.Doping.IntervalSeconds);
         Assert.Equal(5, s.Doping.LeadSeconds);

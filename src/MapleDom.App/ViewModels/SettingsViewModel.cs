@@ -13,7 +13,7 @@ public sealed record Choice<T>(T Value, string Label)
 
 public sealed class TimerSettingsEditor
 {
-    public bool IsAcknowledge { get; init; } = true;
+    public bool IsAcknowledge { get; init; }
     public bool IsRepeat => !IsAcknowledge;
     public string Name { get; set; } = "";
     public string Interval { get; set; } = "";
@@ -39,6 +39,9 @@ public sealed class TimerSettingsEditor
     public static IReadOnlyList<Choice<AlarmScenario>> Scenarios { get; } =
     [new(AlarmScenario.Default, "일반"), new(AlarmScenario.Reminder, "유지"), new(AlarmScenario.Alarm, "알람")];
 
+    public static TimerSettingsEditor From(RepeatTimerSettings settings) =>
+        FromProfile(new() { Name = settings.Name, Interval = Format(settings.IntervalSeconds), Gap = Format(settings.GapSeconds), AutoStart = settings.AutoStart }, settings.Notification);
+
     public static TimerSettingsEditor From(AckTimerSettings settings) =>
         FromProfile(new() { IsAcknowledge = true, Name = settings.Name, Interval = Format(settings.IntervalSeconds), Lead = Format(settings.LeadSeconds), Reminder = Format(settings.ReminderSeconds), AutoStart = settings.AutoStart }, settings.Notification);
 
@@ -53,6 +56,12 @@ public sealed class TimerSettingsEditor
         editor.Expire = Format(profile.ExpireSeconds);
         return editor;
     }
+
+    public RepeatTimerSettings BuildRepeat(List<string> errors) => new()
+    {
+        Name = ReadName(errors), IntervalSeconds = Number(Interval, $"{Name}: 간격", errors),
+        GapSeconds = Number(Gap, $"{Name}: 휴식 시간", errors), AutoStart = AutoStart, Notification = Profile(errors),
+    };
 
     public AckTimerSettings BuildAcknowledge(List<string> errors) => new()
     {
@@ -101,6 +110,7 @@ public sealed class TimerSettingsEditor
 
 public sealed class SettingsViewModel : ObservableObject
 {
+    private TimerSettingsEditor _minute = null!;
     private TimerSettingsEditor _rune = null!;
     private TimerSettingsEditor _doping = null!;
     private WindowOrderEditor _windowOrder = null!;
@@ -121,6 +131,7 @@ public sealed class SettingsViewModel : ObservableObject
         Load(settings, uiSettings);
     }
 
+    public TimerSettingsEditor Minute { get => _minute; private set => Set(ref _minute, value); }
     public TimerSettingsEditor Rune { get => _rune; private set => Set(ref _rune, value); }
     public TimerSettingsEditor Doping { get => _doping; private set => Set(ref _doping, value); }
     public WindowOrderEditor WindowOrder { get => _windowOrder; private set => Set(ref _windowOrder, value); }
@@ -136,6 +147,7 @@ public sealed class SettingsViewModel : ObservableObject
 
     private void Load(AppSettings settings, UiSettings uiSettings)
     {
+        Minute = TimerSettingsEditor.From(settings.Minute);
         Rune = TimerSettingsEditor.From(settings.Rune);
         Doping = TimerSettingsEditor.From(settings.Doping);
         WindowOrder = WindowOrderEditor.From(settings.WindowOrder);
@@ -161,6 +173,7 @@ public sealed class SettingsViewModel : ObservableObject
     {
         var errors = new List<string>();
         settings = _original.Clone();
+        settings.Minute = Minute.BuildRepeat(errors);
         settings.Rune = Rune.BuildAcknowledge(errors);
         settings.Doping = Doping.BuildAcknowledge(errors);
         settings.Notifications.Enabled = NotificationsEnabled;

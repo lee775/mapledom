@@ -45,13 +45,16 @@ public class TimerServiceTests
     }
 
     [Fact]
-    public void Defaults_build_two_timers_with_requested_values()
+    public void Defaults_build_three_timers_with_requested_values()
     {
         using var svc = new TimerService(AppSettings.CreateDefault(), NullNotifier.Instance, new FakeClock());
 
         var snaps = svc.Snapshot().ToDictionary(s => s.Id);
 
-        Assert.Equal(2, snaps.Count);
+        Assert.Equal(3, snaps.Count);
+        Assert.Equal(TimerKind.Repeat, snaps[TimerService.MinuteId].Kind);
+        Assert.Equal(S(60), snaps[TimerService.MinuteId].Interval);
+        Assert.Equal(S(0), snaps[TimerService.MinuteId].Gap);
         Assert.Equal(TimerKind.Acknowledge, snaps[TimerService.RuneId].Kind);
 
         Assert.Equal(S(900), snaps[TimerService.RuneId].Interval);
@@ -97,6 +100,47 @@ public class TimerServiceTests
         Assert.Equal(TimerStatus.Counting, snap.Status);
         Assert.Equal(S(900), snap.Remaining);
         Assert.Equal(0, snap.ReminderCount);
+    }
+
+    [Fact]
+    public void Minute_timer_repeats_without_acknowledgement()
+    {
+        var clock = new FakeClock();
+        var sink = new Collector();
+        using var svc = new TimerService(AppSettings.CreateDefault(), sink, clock);
+
+        svc.Start(TimerService.MinuteId);
+        Assert.Equal(S(60), svc.Get(TimerService.MinuteId).Remaining);
+
+        clock.Advance(60);
+        svc.Engine.Pump();
+        var first = sink.WaitFor(0);
+        Assert.Equal("1분 알림", first.Title);
+        Assert.Equal(AlarmKind.Main, first.Kind);
+        var snap = svc.Get(TimerService.MinuteId);
+        Assert.Equal(TimerStatus.Counting, snap.Status);   // 확인 버튼 없이 바로 다음 주기
+        Assert.Equal(S(60), snap.Remaining);
+
+        clock.Advance(60);
+        svc.Engine.Pump();
+        sink.WaitFor(1);
+        Assert.Equal(2, svc.Get(TimerService.MinuteId).FireCount);
+    }
+
+    [Fact]
+    public void Minute_timer_gap_extends_the_cycle()
+    {
+        var clock = new FakeClock();
+        var settings = AppSettings.CreateDefault();
+        settings.Minute.IntervalSeconds = 58;
+        settings.Minute.GapSeconds = 2;
+        using var svc = new TimerService(settings, NullNotifier.Instance, clock);
+
+        svc.Start(TimerService.MinuteId);
+        clock.Advance(58);
+        svc.Engine.Pump();
+
+        Assert.Equal(S(60), svc.Get(TimerService.MinuteId).Remaining);   // 휴식 2초 + 58초
     }
 
     [Fact]

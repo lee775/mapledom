@@ -10,6 +10,7 @@
         </Grid.RowDefinitions>
         <StackPanel Margin="0,0,0,13"><TextBlock Text="설정" FontSize="20" FontWeight="SemiBold" /><TextBlock Text="시간은 초 단위입니다. 저장하면 실행 중인 타이머와 창 순서에 바로 반영됩니다." Foreground="{StaticResource MutedText}" Margin="0,5,0,0" FontSize="11" /></StackPanel>
         <TabControl x:Name="SettingsTabs" Grid.Row="1">
+            <TabItem Header="1분"><controls:TimerEditor DataContext="{Binding Minute}" /></TabItem>
             <TabItem Header="룬"><controls:TimerEditor DataContext="{Binding Rune}" /></TabItem>
             <TabItem Header="도핑"><controls:TimerEditor DataContext="{Binding Doping}" /></TabItem>
             <TabItem Header="알림 · 창">
@@ -90,7 +91,7 @@
             <TextBlock Text="테스트 알림은 저장된 설정을 사용합니다." Foreground="{StaticResource MutedText}" FontSize="10" Margin="0,0,0,7" />
             <StackPanel Grid.Row="1" Orientation="Horizontal">
                 <Button Content="기본값 복원" Click="OnRestoreDefaults" Margin="0,0,7,0" />
-                <Button Content="테스트 알림" Click="OnTest" ToolTip="선택한 타이머의 저장된 알림을 보냅니다. 다른 탭에서는 룬을 사용합니다." />
+                <Button Content="테스트 알림" Click="OnTest" ToolTip="선택한 타이머의 저장된 알림을 보냅니다. 타이머 탭이 아니면 룬을 사용합니다." />
             </StackPanel>
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="취소" IsCancel="True" MinWidth="64" Margin="0,0,7,0" />

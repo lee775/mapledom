@@ -31,7 +31,12 @@ public partial class SettingsWindow : Window
     private void OnRestoreDefaults(object sender, RoutedEventArgs args) => ViewModel.RestoreDefaults();
 
     private void OnTest(object sender, RoutedEventArgs args) =>
-        _main.SendTest(SettingsTabs.SelectedIndex == 1 ? TimerService.DopingId : TimerService.RuneId);
+        _main.SendTest(SettingsTabs.SelectedIndex switch
+        {
+            0 => TimerService.MinuteId,
+            2 => TimerService.DopingId,
+            _ => TimerService.RuneId,
+        });
 
     /// <summary>편집 중인 목록으로 한 번 정렬해 본다(저장·적용 상태 변경 없음). 정렬 뒤 이 창을 다시 앞으로 가져온다.</summary>
     private void OnArrangeNow(object sender, RoutedEventArgs args)

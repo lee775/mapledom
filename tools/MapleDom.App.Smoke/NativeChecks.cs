@@ -39,10 +39,10 @@ internal static partial class Program
         Check(!vm.HasWarning, "Global hotkeys register successfully");
         NativeMethods.PostMessage(source.Handle, 0x0312, 1, 0);
         PumpFor(TimeSpan.FromMilliseconds(30));
-        Check(vm.Cards[0].IsRunning, "Rune hotkey message acknowledges timer");
+        Check(vm.Cards[1].IsRunning, "Rune hotkey message acknowledges timer");
         NativeMethods.PostMessage(source.Handle, 0x0312, 2, 0);
         PumpFor(TimeSpan.FromMilliseconds(30));
-        Check(vm.Cards[1].IsRunning, "Doping hotkey message acknowledges timer");
+        Check(vm.Cards[2].IsRunning, "Doping hotkey message acknowledges timer");
         NativeMethods.PostMessage(source.Handle, 0x0312, 3, 0);
         PumpFor(TimeSpan.FromMilliseconds(30));
         Check(vm.Cards.All(card => !card.IsRunning), "Global start/stop message stops active timers");
