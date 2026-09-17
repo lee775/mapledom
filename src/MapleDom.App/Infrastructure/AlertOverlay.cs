@@ -40,7 +40,7 @@ public sealed class AlertOverlay : IDisposable
 
         _window ??= new AlertOverlayWindow();
         _window.SetAccent(notification.TimerId);
-        _window.ShowAlert(notification.Title, notification.Message, _settings);
+        _window.ShowAlert(notification.Title, notification.Message, _settings, notification.OverlayPosition);
 
         _hideTimer.Stop();
         _hideTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_settings.DurationSeconds, 0.5, 60));

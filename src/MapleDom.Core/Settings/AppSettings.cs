@@ -21,6 +21,9 @@ public sealed class NotificationProfile
 
     /// <summary>알림 센터에 남는 시간(초). 0 이하면 만료 없음.</summary>
     public double ExpireSeconds { get; set; } = 10;
+
+    /// <summary>이 타이머의 화면 알림 배너가 뜨는 위치.</summary>
+    public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.Top;
 }
 
 /// <summary>30초 알림(반복형) 타이머 설정. 확인 버튼 없이 Interval + Gap 주기로 계속 울린다.</summary>
@@ -93,12 +96,16 @@ public sealed class TelegramSettings
     public TelegramSettings Clone() => (TelegramSettings)MemberwiseClone();
 }
 
-/// <summary>화면 알림 배너가 뜨는 위치.</summary>
+/// <summary>화면 알림 배너가 뜨는 위치(작업 영역 기준).</summary>
 public enum OverlayPosition
 {
+    TopLeft,
     Top,
+    TopRight,
     Center,
+    BottomLeft,
     Bottom,
+    BottomRight,
 }
 
 /// <summary>
@@ -111,8 +118,6 @@ public sealed class OverlaySettings
 
     /// <summary>배너가 떠 있는 시간(초).</summary>
     public double DurationSeconds { get; set; } = 4;
-
-    public OverlayPosition Position { get; set; } = OverlayPosition.Top;
 
     /// <summary>제목 글자 크기(px). 본문은 이보다 작게 그려진다.</summary>
     public double FontSize { get; set; } = 46;
@@ -189,7 +194,6 @@ public sealed class AppSettings
         if (!(Overlay.DurationSeconds > 0)) Overlay.DurationSeconds = 4;
         if (!(Overlay.FontSize > 0)) Overlay.FontSize = 46;
         if (!(Overlay.Opacity > 0)) Overlay.Opacity = 0.92;
-        if (!Enum.IsDefined(Overlay.Position)) Overlay.Position = OverlayPosition.Top;
 
         if (Telegram is null) Telegram = new TelegramSettings();
         Telegram.BotToken = (Telegram.BotToken ?? "").Trim();
@@ -273,6 +277,7 @@ public sealed class AppSettings
         if (string.IsNullOrWhiteSpace(p.MainMessage)) p.MainMessage = d.MainMessage;
         if (string.IsNullOrWhiteSpace(p.ReminderMessage)) p.ReminderMessage = d.ReminderMessage;
         if (double.IsNaN(p.ExpireSeconds)) p.ExpireSeconds = d.ExpireSeconds;
+        if (!Enum.IsDefined(p.OverlayPosition)) p.OverlayPosition = d.OverlayPosition;
         return p;
     }
 
@@ -313,6 +318,7 @@ public static class SettingsDefaults
             ReminderSound = AlarmSound.Default,
             Scenario = AlarmScenario.Default,
             ExpireSeconds = 10,
+            OverlayPosition = OverlayPosition.BottomRight,
         },
     };
 

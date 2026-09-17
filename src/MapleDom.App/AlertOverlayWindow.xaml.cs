@@ -35,7 +35,7 @@ public partial class AlertOverlayWindow : Window
     }
 
     /// <summary>배너 내용을 채우고 지정한 위치에 띄운다. 이미 떠 있으면 내용만 바꾼다.</summary>
-    public void ShowAlert(string title, string message, OverlaySettings settings)
+    public void ShowAlert(string title, string message, OverlaySettings settings, OverlayPosition position = OverlayPosition.Top)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -48,7 +48,7 @@ public partial class AlertOverlayWindow : Window
 
         if (!IsVisible) Show();
         UpdateLayout();
-        Place(settings.Position);
+        Place(position);
 
         // 다른 '항상 위' 창(게임 등)보다 앞에 오도록 다시 세운다. 활성화는 하지 않는다.
         Topmost = false;
@@ -57,15 +57,25 @@ public partial class AlertOverlayWindow : Window
 
     private void Place(OverlayPosition position)
     {
+        const double Margin = 24;
         var area = SystemParameters.WorkArea;
         var width = ActualWidth > 0 ? ActualWidth : Root.DesiredSize.Width;
         var height = ActualHeight > 0 ? ActualHeight : Root.DesiredSize.Height;
+        var middleX = area.Left + Math.Max(0, (area.Width - width) / 2);
+        var rightX = area.Right - width - Margin;
 
-        Left = area.Left + Math.Max(0, (area.Width - width) / 2);
+        Left = position switch
+        {
+            OverlayPosition.TopLeft or OverlayPosition.BottomLeft => area.Left + Margin,
+            OverlayPosition.TopRight or OverlayPosition.BottomRight => Math.Max(area.Left, rightX),
+            _ => middleX,
+        };
         Top = position switch
         {
             OverlayPosition.Center => area.Top + Math.Max(0, (area.Height - height) / 2),
             OverlayPosition.Bottom => area.Bottom - height - area.Height * 0.12,
+            OverlayPosition.BottomLeft or OverlayPosition.BottomRight => area.Bottom - height - Margin,
+            OverlayPosition.TopLeft or OverlayPosition.TopRight => area.Top + Margin,
             _ => area.Top + area.Height * 0.08,
         };
     }

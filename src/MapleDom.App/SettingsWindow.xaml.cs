@@ -62,7 +62,14 @@ public partial class SettingsWindow : Window
 
         var saved = overlay.Settings;
         overlay.Update(draft);
-        overlay.Show(new AlarmNotification("preview", "preview", AlarmKind.Main, "화면 알림 미리보기", "이 크기와 위치로 표시됩니다.", AlarmSound.Silent, AlarmScenario.Default, null));
+        var where = SettingsTabs.SelectedIndex switch
+        {
+            0 => ViewModel.Minute.OverlayPosition,
+            1 => ViewModel.Rune.OverlayPosition,
+            2 => ViewModel.Doping.OverlayPosition,
+            _ => ViewModel.Rune.OverlayPosition,
+        };
+        overlay.Show(new AlarmNotification("preview", "preview", AlarmKind.Main, "화면 알림 미리보기", "이 크기와 위치로 표시됩니다.", AlarmSound.Silent, AlarmScenario.Default, null, where));
         // 저장 전이므로 설정은 되돌린다. 배너는 떠 있는 동안 유지된다.
         overlay.Update(saved);
     }

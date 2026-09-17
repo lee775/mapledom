@@ -185,14 +185,14 @@ internal static partial class Program
         var telegram = dialog.ViewModel.Telegram;
         Check(!telegram.Enabled && telegram.SendRune && telegram.SendDoping && !telegram.SendMinute, "Telegram tab starts off with rune and doping selected");
         var overlay = dialog.ViewModel.Overlay;
-        Check(overlay.Enabled && overlay.Position == MapleDom.Core.Settings.OverlayPosition.Top, "Overlay banner is on by default, positioned at the top");
+        Check(overlay.Enabled && dialog.ViewModel.Minute.OverlayPosition == MapleDom.Core.Settings.OverlayPosition.BottomRight && dialog.ViewModel.Rune.OverlayPosition == MapleDom.Core.Settings.OverlayPosition.Top, "Overlay is on by default; 30s banner sits bottom-right, rune on top");
         overlay.Duration = "0";
         Check(!dialog.ViewModel.TryBuild(out _, out _) && dialog.ViewModel.Errors.Any(e => e.Contains("표시 시간")), "Overlay rejects a zero duration");
         overlay.Duration = "3";
-        overlay.Position = MapleDom.Core.Settings.OverlayPosition.Center;
-        Check(dialog.ViewModel.TryBuild(out var withOverlay, out _) && withOverlay.Overlay.DurationSeconds == 3 && withOverlay.Overlay.Position == MapleDom.Core.Settings.OverlayPosition.Center, "Overlay settings build from the tab");
+        dialog.ViewModel.Minute.OverlayPosition = MapleDom.Core.Settings.OverlayPosition.BottomLeft;
+        Check(dialog.ViewModel.TryBuild(out var withOverlay, out _) && withOverlay.Overlay.DurationSeconds == 3 && withOverlay.Minute.Notification.OverlayPosition == MapleDom.Core.Settings.OverlayPosition.BottomLeft, "Overlay duration and per-timer position build from the tabs");
         overlay.Duration = "4";
-        overlay.Position = MapleDom.Core.Settings.OverlayPosition.Top;
+        dialog.ViewModel.Minute.OverlayPosition = MapleDom.Core.Settings.OverlayPosition.BottomRight;
         telegram.Enabled = true;
         Check(!dialog.ViewModel.TryBuild(out _, out _) && dialog.ViewModel.Errors.Any(e => e.Contains("채팅 ID")), "Telegram tab requires a token and chat id when enabled");
         telegram.BotToken = "123456:test-token";
@@ -204,7 +204,7 @@ internal static partial class Program
         dialog.Close();
         var overlayWindow = new AlertOverlayWindow();
         overlayWindow.SetAccent(TimerService.RuneId);
-        overlayWindow.ShowAlert("룬 타이머", "룬 생성! 룬을 까고 [룬 깟음]을 누르세요.", new MapleDom.Core.Settings.OverlaySettings());
+        overlayWindow.ShowAlert("룬 타이머", "룬 생성! 룬을 까고 [룬 깟음]을 누르세요.", new MapleDom.Core.Settings.OverlaySettings(), MapleDom.Core.Settings.OverlayPosition.Top);
         PumpFor(TimeSpan.FromMilliseconds(60));
         Check(overlayWindow.IsVisible && !overlayWindow.IsActive && overlayWindow.Topmost, "Overlay banner shows topmost without taking focus");
         RenderVisual((FrameworkElement)overlayWindow.Content, "overlay-banner.png", output);

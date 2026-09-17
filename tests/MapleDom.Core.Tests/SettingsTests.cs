@@ -134,6 +134,26 @@ public class SettingsTests
     }
 
     [Fact]
+    public void Overlay_position_is_per_timer_and_rides_on_the_notification()
+    {
+        var s = AppSettings.CreateDefault();
+
+        Assert.Equal(OverlayPosition.BottomRight, s.Minute.Notification.OverlayPosition);   // 30초는 우측 아래
+        Assert.Equal(OverlayPosition.Top, s.Rune.Notification.OverlayPosition);
+        Assert.Equal(OverlayPosition.Top, s.Doping.Notification.OverlayPosition);
+
+        s.Rune.Notification.OverlayPosition = OverlayPosition.BottomLeft;
+        var loaded = SettingsStore.Deserialize(SettingsStore.Serialize(s));
+        Assert.Equal(OverlayPosition.BottomLeft, loaded.Rune.Notification.OverlayPosition);
+        Assert.Equal(OverlayPosition.BottomRight, loaded.Minute.Notification.OverlayPosition);
+
+        using var svc = new TimerService(loaded, Notifications.NullNotifier.Instance, new FakeClock());
+        var built = svc.SendTest(TimerService.MinuteId);
+        Assert.Equal(OverlayPosition.BottomRight, built.OverlayPosition);
+        Assert.Equal(OverlayPosition.BottomLeft, svc.SendTest(TimerService.RuneId).OverlayPosition);
+    }
+
+    [Fact]
     public void Clone_is_deep()
     {
         var s = AppSettings.CreateDefault();

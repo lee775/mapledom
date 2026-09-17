@@ -1,3 +1,4 @@
+using MapleDom.Core.Settings;
 using MapleDom.Core.Timers;
 
 namespace MapleDom.Core.Notifications;
@@ -40,7 +41,8 @@ public sealed record AlarmNotification(
     string Message,
     AlarmSound Sound,
     AlarmScenario Scenario,
-    TimeSpan? ExpireAfter);
+    TimeSpan? ExpireAfter,
+    OverlayPosition OverlayPosition = OverlayPosition.Top);
 
 /// <summary>알림 백엔드. Windows 토스트 구현은 MapleDom.Windows 프로젝트에 있다.</summary>
 public interface IAlarmNotifier

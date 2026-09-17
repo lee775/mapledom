@@ -139,3 +139,10 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
   - 설정: 알림·창 탭의 "화면 알림"(사용, 표시 시간, 위치 위/가운데/아래, 글자 크기, 불투명도, [배너 미리보기]).
   - `MainViewModel.RecordNotification`에서 띄우므로 음소거·알림 끔이면 배너도 안 뜬다. 테스트 알림에서도 뜬다.
 - 검증 도구에 오버레이 검사 4개와 `overlay-banner.png` 렌더가 추가돼 총 62개다.
+
+## 화면 알림 위치를 타이머별로 (2026-09-17, Claude)
+
+- `OverlayPosition` 이 7가지(좌/가운데/우 × 위/가운데/아래 + 화면 가운데)로 늘고, **위치는 `NotificationProfile.OverlayPosition`** 으로 타이머마다 따로 정한다. `OverlaySettings` 에는 사용 여부·표시 시간·글자 크기·불투명도만 남았다.
+- `AlarmNotification` 에 `OverlayPosition` 이 추가돼(기본 Top) 알림 자체가 위치를 들고 다닌다. `TimerService.BuildNotification` 이 프로필 값을 실어 보내고 `AlertOverlay` 는 그대로 쓴다.
+- 기본값: 30초 = `BottomRight`(자주 울려 시야를 가리지 않게), 룬·도핑 = `Top`.
+- 설정 UI: 각 타이머 탭 맨 아래 "화면 알림 위치" 콤보. 알림·창 탭의 위치 콤보는 제거했다. [배너 미리보기]는 지금 열려 있는 타이머 탭의 위치로 띄운다.

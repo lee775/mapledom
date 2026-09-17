@@ -28,6 +28,7 @@ public sealed class TimerSettingsEditor
     public AlarmSound ReminderSound { get; set; }
     public AlarmScenario Scenario { get; set; }
     public string Expire { get; set; } = "";
+    public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.Top;
 
     public static IReadOnlyList<Choice<AlarmSound>> Sounds { get; } =
     [
@@ -54,6 +55,7 @@ public sealed class TimerSettingsEditor
         editor.ReminderSound = profile.ReminderSound;
         editor.Scenario = profile.Scenario;
         editor.Expire = Format(profile.ExpireSeconds);
+        editor.OverlayPosition = profile.OverlayPosition;
         return editor;
     }
 
@@ -88,6 +90,7 @@ public sealed class TimerSettingsEditor
             Title = Title, MainMessage = MainMessage, ReminderMessage = ReminderMessage,
             Sound = Sound, ReminderSound = ReminderSound, Scenario = Scenario,
             ExpireSeconds = Number(Expire, $"{Name}: 유지 시간", errors, allowNegative: true),
+            OverlayPosition = Enum.IsDefined(OverlayPosition) ? OverlayPosition : OverlayPosition.Top,
         };
     }
 
@@ -155,24 +158,25 @@ public sealed class OverlayEditor : ObservableObject
 {
     private bool _enabled = true;
     private string _duration = "4";
-    private OverlayPosition _position = OverlayPosition.Top;
     private double _fontSize = 46;
     private double _opacity = 0.92;
 
     public bool Enabled { get => _enabled; set => Set(ref _enabled, value); }
     public string Duration { get => _duration; set => Set(ref _duration, value); }
-    public OverlayPosition Position { get => _position; set => Set(ref _position, value); }
     public double FontSize { get => _fontSize; set => Set(ref _fontSize, value); }
     public double Opacity { get => _opacity; set => Set(ref _opacity, value); }
 
     public static IReadOnlyList<Choice<OverlayPosition>> Positions { get; } =
-    [new(OverlayPosition.Top, "위쪽"), new(OverlayPosition.Center, "가운데"), new(OverlayPosition.Bottom, "아래쪽")];
+    [
+        new(OverlayPosition.TopLeft, "좌측 위"), new(OverlayPosition.Top, "위 가운데"), new(OverlayPosition.TopRight, "우측 위"),
+        new(OverlayPosition.Center, "화면 가운데"),
+        new(OverlayPosition.BottomLeft, "좌측 아래"), new(OverlayPosition.Bottom, "아래 가운데"), new(OverlayPosition.BottomRight, "우측 아래"),
+    ];
 
     public static OverlayEditor From(OverlaySettings settings) => new()
     {
         Enabled = settings.Enabled,
         Duration = TimerSettingsEditor.Format(settings.DurationSeconds),
-        Position = settings.Position,
         FontSize = settings.FontSize,
         Opacity = settings.Opacity,
     };
@@ -181,7 +185,6 @@ public sealed class OverlayEditor : ObservableObject
     {
         Enabled = Enabled,
         DurationSeconds = TimerSettingsEditor.Number(Duration, "화면 알림: 표시 시간", errors),
-        Position = Enum.IsDefined(Position) ? Position : OverlayPosition.Top,
         FontSize = FontSize,
         Opacity = Opacity,
     };
