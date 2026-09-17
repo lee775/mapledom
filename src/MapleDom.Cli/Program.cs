@@ -40,9 +40,13 @@ internal static class Program
         if (opts.Demo) ApplyDemoScale(settings);
 
         IAlarmNotifier backend = opts.Silent ? NullNotifier.Instance : new WindowsToastNotifier();
+        using var telegram = new TelegramNotifier();
+        telegram.Update(settings.Telegram);
+        telegram.SendFailed += (n, ex) => Log($"[텔레그램 실패] {n.Title}: {ex.Message}");
         var notifier = new CompositeNotifier(
             new CallbackNotifier(n => Log($"[알림] {n.Title}: {n.Message}")),
-            backend);
+            backend,
+            telegram);
 
         using var service = new TimerService(settings, notifier);
         service.AlarmFired += e =>
