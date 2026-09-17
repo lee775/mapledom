@@ -116,11 +116,11 @@ internal static partial class Program
         Check(vm.WindowOrder.SelectedBack is null, "Clearing the order clears the card selection");
         Render(window, "main-stopped.png", output);
         vm.StartAllCommand.Execute(null);
-        Check(vm.Cards.Select(card => card.Remaining).SequenceEqual(["1:00", "15:00", "29:55"]), "Start all uses Core durations");
+        Check(vm.Cards.Select(card => card.Remaining).SequenceEqual(["0:58", "15:00", "29:55"]), "Start all uses Core durations");
         Render(window, "main-counting.png", output);
         clock.Advance(7);
         vm.Refresh();
-        Check(vm.Cards[0].Remaining == "0:53" && vm.Cards[1].Remaining == "14:53" && vm.Cards[2].Remaining == "29:48", "Countdown reflects monotonic clock");
+        Check(vm.Cards[0].Remaining == "0:51" && vm.Cards[1].Remaining == "14:53" && vm.Cards[2].Remaining == "29:48", "Countdown reflects monotonic clock");
         vm.Cards[1].AcknowledgeCommand.Execute(null);
         vm.Cards[2].AcknowledgeCommand.Execute(null);
         Check(vm.Cards[1].Remaining == "15:00" && vm.Cards[2].Remaining == "29:55", "Acknowledgements reset timers immediately");
@@ -148,13 +148,12 @@ internal static partial class Program
         var tabs = (TabControl)dialog.FindName("SettingsTabs");
         tabs.SelectedIndex = 1;
         Render(dialog, "settings-rune.png", output);
-        dialog.ViewModel.Minute.Gap = "2";
-        Check(dialog.ViewModel.TryBuild(out var withMinute, out _) && withMinute.Minute.IntervalSeconds == 60 && withMinute.Minute.GapSeconds == 2, "Minute tab builds the repeat timer with its gap");
+        Check(dialog.ViewModel.TryBuild(out var withMinute, out _) && withMinute.Minute.IntervalSeconds == 58 && withMinute.Minute.GapSeconds == 2, "Minute tab builds the repeat timer with its gap");
         dialog.ViewModel.Minute.Interval = "-1";
         Check(!dialog.ViewModel.TryBuild(out _, out _), "Minute tab rejects a negative interval");
         // 아래 룬 검사는 이 다이얼로그가 service.Settings(룬 간격 10초)로 열린 상태를 쓰므로 1분 값만 되돌린다.
-        dialog.ViewModel.Minute.Interval = "60";
-        dialog.ViewModel.Minute.Gap = "0";
+        dialog.ViewModel.Minute.Interval = "58";
+        dialog.ViewModel.Minute.Gap = "2";
         dialog.ViewModel.Rune.Lead = "10";
         Check(!dialog.ViewModel.TryBuild(out _, out _), "Dialog validation rejects invalid draft");
         Render(dialog, "settings-errors.png", output);

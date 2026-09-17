@@ -7,7 +7,7 @@ UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참�
 
 | 타이머 | 종류 | 기본값 | 동작 |
 |---|---|---|---|
-| 1분 | 반복형 | 60초 (+휴식 0초) | 60초마다 알림. 확인 버튼 없이 계속 반복. 휴식 시간을 주면 주기는 간격 + 휴식. |
+| 1분 | 반복형 | 58초 + 휴식 2초 | 58초 카운트 → 알림 → 2초 쉬고 다시 58초. 알림 주기는 정확히 60초. 확인 버튼 없이 계속 반복. |
 | 룬 | 확인형 | 15분, 리마인드 1분 | 15분 만기 → 알림 → **[룬 깟음]** 전까지 1분마다 재알림. 누르면 15분 리셋. |
 | 도핑 | 확인형 | 30분 − 5초, 리마인드 1분 | **[도핑했음]** 누르면 29분 55초 뒤 알림(버튼 누르는 시간 보정). 안 누르면 1분마다 재알림. |
 
@@ -127,7 +127,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 
 ```json
 {
-  "Minute": { "Name": "1분", "IntervalSeconds": 60, "GapSeconds": 0, "AutoStart": false,
+  "Minute": { "Name": "1분", "IntervalSeconds": 58, "GapSeconds": 2, "AutoStart": false,
     "Notification": { "Title": "1분 알림", "MainMessage": "1분 지났습니다. 움직이세요!",
       "Sound": "Default", "Scenario": "Default", "ExpireSeconds": 10 } },
   "Rune":   { "Name": "룬",  "IntervalSeconds": 900,  "LeadSeconds": 0, "ReminderSeconds": 60, "AutoStart": false,

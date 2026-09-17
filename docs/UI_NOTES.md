@@ -116,7 +116,7 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 ## 1분 알림 타이머 복원 (2026-09-17, Claude)
 
 - 사용자 요청으로 반복형 타이머를 되살렸다. 메인 창 카드는 위에서부터 **창 순서 → 1분 → 룬 → 도핑** 4개이고 창 높이는 300으로 늘렸다(카드 UniformGrid Rows=3).
-- Core: `RepeatTimerSettings`/`SettingsDefaults.Minute()`(60초, 휴식 0초) 복원, `TimerService.MinuteId`와 `RepeatTimer` 등록, `TimerIds` 순서는 minute → rune → doping. SchemaVersion 3(구버전 파일은 Minute 항목이 없으면 기본값으로 채움).
+- Core: `RepeatTimerSettings`/`SettingsDefaults.Minute()`(58초 + 휴식 2초 = 60초 주기) 복원, `TimerService.MinuteId`와 `RepeatTimer` 등록, `TimerIds` 순서는 minute → rune → doping. SchemaVersion 3(구버전 파일은 Minute 항목이 없으면 기본값으로 채움).
 - App: 설정 탭이 **1분 / 룬 / 도핑 / 알림·창 / 창 순서** 5개. `TimerSettingsEditor.From(RepeatTimerSettings)`와 `BuildRepeat`를 되살렸고, `IsAcknowledge` 기본값을 false로 되돌려 반복형 탭에서는 휴식 시간 칸이, 확인형 탭에서는 선행/리마인드 칸이 보인다.
 - `TimerCardViewModel.CanAcknowledge`는 `Id != MinuteId` — 1분 카드에는 확인 버튼이 없다.
 - 검증 도구: 카드 3개·확인 버튼 유무·1분 탭 빌드/검증 검사 추가, 탭 인덱스 이동(알림·창 3, 창 순서 4), 렌더 `settings-minute.png` 추가.

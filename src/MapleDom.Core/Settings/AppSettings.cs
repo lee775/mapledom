@@ -212,14 +212,14 @@ public sealed class AppSettings
     }
 }
 
-/// <summary>기본값. 1분 알림 60초, 룬 15분, 도핑 30분-5초, 리마인드 1분, 알림 유지 10초.</summary>
+/// <summary>기본값. 1분 알림 58초+휴식 2초(주기 60초), 룬 15분, 도핑 30분-5초, 리마인드 1분, 알림 유지 10초.</summary>
 public static class SettingsDefaults
 {
     public static RepeatTimerSettings Minute() => new()
     {
         Name = "1분",
-        IntervalSeconds = 60,
-        GapSeconds = 0,
+        IntervalSeconds = 58,   // 58초 카운트 + 2초 휴식 = 정확히 60초 주기
+        GapSeconds = 2,
         AutoStart = false,
         Notification = new NotificationProfile
         {

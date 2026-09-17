@@ -53,8 +53,8 @@ public class TimerServiceTests
 
         Assert.Equal(3, snaps.Count);
         Assert.Equal(TimerKind.Repeat, snaps[TimerService.MinuteId].Kind);
-        Assert.Equal(S(60), snaps[TimerService.MinuteId].Interval);
-        Assert.Equal(S(0), snaps[TimerService.MinuteId].Gap);
+        Assert.Equal(S(58), snaps[TimerService.MinuteId].Interval);
+        Assert.Equal(S(2), snaps[TimerService.MinuteId].Gap);
         Assert.Equal(TimerKind.Acknowledge, snaps[TimerService.RuneId].Kind);
 
         Assert.Equal(S(900), snaps[TimerService.RuneId].Interval);
@@ -110,16 +110,16 @@ public class TimerServiceTests
         using var svc = new TimerService(AppSettings.CreateDefault(), sink, clock);
 
         svc.Start(TimerService.MinuteId);
-        Assert.Equal(S(60), svc.Get(TimerService.MinuteId).Remaining);
+        Assert.Equal(S(58), svc.Get(TimerService.MinuteId).Remaining);
 
-        clock.Advance(60);
+        clock.Advance(58);
         svc.Engine.Pump();
         var first = sink.WaitFor(0);
         Assert.Equal("1분 알림", first.Title);
         Assert.Equal(AlarmKind.Main, first.Kind);
         var snap = svc.Get(TimerService.MinuteId);
         Assert.Equal(TimerStatus.Counting, snap.Status);   // 확인 버튼 없이 바로 다음 주기
-        Assert.Equal(S(60), snap.Remaining);
+        Assert.Equal(S(60), snap.Remaining);                // 휴식 2초 + 58초
 
         clock.Advance(60);
         svc.Engine.Pump();
@@ -128,19 +128,18 @@ public class TimerServiceTests
     }
 
     [Fact]
-    public void Minute_timer_gap_extends_the_cycle()
+    public void Minute_timer_without_gap_restarts_immediately()
     {
         var clock = new FakeClock();
         var settings = AppSettings.CreateDefault();
-        settings.Minute.IntervalSeconds = 58;
-        settings.Minute.GapSeconds = 2;
+        settings.Minute.GapSeconds = 0;
         using var svc = new TimerService(settings, NullNotifier.Instance, clock);
 
         svc.Start(TimerService.MinuteId);
         clock.Advance(58);
         svc.Engine.Pump();
 
-        Assert.Equal(S(60), svc.Get(TimerService.MinuteId).Remaining);   // 휴식 2초 + 58초
+        Assert.Equal(S(58), svc.Get(TimerService.MinuteId).Remaining);   // 휴식 없이 바로 재시작
     }
 
     [Fact]
