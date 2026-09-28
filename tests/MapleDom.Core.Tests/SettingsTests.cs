@@ -156,6 +156,26 @@ public class SettingsTests
     }
 
     [Fact]
+    public void Old_file_without_overlay_flags_gets_the_default_policy()
+    {
+        // v4 이하 파일: ShowOverlay 값이 없어 전부 켜진 것으로 읽히지만, 마이그레이션이 기본 정책을 적용한다.
+        var json = "{\"SchemaVersion\":4,\"Minute\":{\"IntervalSeconds\":40,\"Notification\":{\"OverlayPosition\":\"BottomRight\"}}," +
+                   "\"Rune\":{\"IntervalSeconds\":900},\"Doping\":{\"IntervalSeconds\":1800}}";
+
+        var s = SettingsStore.Deserialize(json);
+
+        Assert.Equal(5, s.SchemaVersion);
+        Assert.Equal(40, s.Minute.IntervalSeconds);                 // 사용자가 바꾼 값은 유지
+        Assert.True(s.Minute.Notification.ShowOverlay);
+        Assert.False(s.Rune.Notification.ShowOverlay);
+        Assert.False(s.Doping.Notification.ShowOverlay);
+
+        // 이미 v5 인 파일은 사용자가 고른 값을 그대로 둔다.
+        var current = SettingsStore.Deserialize("{\"SchemaVersion\":5,\"Rune\":{\"Notification\":{\"ShowOverlay\":true}}}");
+        Assert.True(current.Rune.Notification.ShowOverlay);
+    }
+
+    [Fact]
     public void Clone_is_deep()
     {
         var s = AppSettings.CreateDefault();

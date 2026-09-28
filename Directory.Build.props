@@ -8,6 +8,6 @@
     <NeutralLanguage>ko-KR</NeutralLanguage>
     <Company>MapleDom</Company>
     <Product>MapleDom</Product>
-    <Version>0.5.2</Version>
+    <Version>0.5.3</Version>
   </PropertyGroup>
 </Project>

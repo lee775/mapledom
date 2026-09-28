@@ -160,7 +160,7 @@ public sealed class WindowOrderSettings
 
 public sealed class AppSettings
 {
-    public const int CurrentSchemaVersion = 4;
+    public const int CurrentSchemaVersion = 5;
 
     public static readonly TimeSpan MaxInterval = TimeSpan.FromHours(24);
 
@@ -185,6 +185,7 @@ public sealed class AppSettings
     /// <summary>비어 있거나 0 이하인 값을 기본값으로 채운다(구버전 파일, 손편집 대비). 자기 자신을 돌려준다.</summary>
     public AppSettings Normalize()
     {
+        var loadedVersion = SchemaVersion;
         Minute = NormalizeRepeat(Minute, SettingsDefaults.Minute());
         Rune = NormalizeAck(Rune, SettingsDefaults.Rune());
         Doping = NormalizeAck(Doping, SettingsDefaults.Doping());
@@ -209,6 +210,15 @@ public sealed class AppSettings
         {
             window.ProcessName = (window.ProcessName ?? "").Trim();
             window.TitleContains = (window.TitleContains ?? "").Trim();
+        }
+
+        // v5: 화면 배너를 타이머별로 켜고 끄게 바뀌었다. 그 이전 파일에는 값이 없어 전부 켜진 것으로 읽히므로
+        // 기본 정책(30초만 배너)을 한 번 적용한다. 이후 저장된 파일은 사용자가 고른 값을 그대로 쓴다.
+        if (loadedVersion < 5)
+        {
+            Minute.Notification.ShowOverlay = SettingsDefaults.Minute().Notification.ShowOverlay;
+            Rune.Notification.ShowOverlay = SettingsDefaults.Rune().Notification.ShowOverlay;
+            Doping.Notification.ShowOverlay = SettingsDefaults.Doping().Notification.ShowOverlay;
         }
 
         SchemaVersion = CurrentSchemaVersion;
