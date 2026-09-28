@@ -38,8 +38,8 @@ Windows 토스트가 작아서 놓치기 쉬우면 설정 > **알림 · 창** �
 알림이 울릴 때 화면에 큰 배너가 뜬다.
 
 - **클릭을 통과시키고 포커스를 뺏지 않는다**(`WS_EX_NOACTIVATE | WS_EX_TRANSPARENT`). 배너가 떠 있어도 게임 조작이 그대로 된다.
-- 표시 시간·글자 크기·불투명도는 설정 > 알림 · 창 탭에서, **뜨는 위치는 타이머 탭에서 각각** 고른다(좌/가운데/우 × 위/가운데/아래 7가지). [배너 미리보기]로 확인할 수 있다.
-- 기본 위치: 30초는 **우측 아래**(자주 울려서 시야를 가리지 않게), 룬·도핑은 **위 가운데**.
+- 표시 시간·글자 크기·불투명도는 설정 > 알림 · 창 탭에서, **배너 표시 여부와 위치는 타이머 탭에서 각각** 고른다(좌/가운데/우 × 위/가운데/아래 7가지). [배너 미리보기]로 확인할 수 있다.
+- 기본값: **30초만 배너를 쓰고 우측 아래**에 뜬다. 룬·도핑은 배너 없이 Windows 토스트만 온다(필요하면 타이머 탭에서 켤 수 있다).
 - 타이머별로 테두리 색이 다르다(룬 초록, 도핑 빨강, 30초 주황).
 - 항상 위 층에 그려지므로 창 모드·테두리 없는 전체화면 게임 위에도 뜬다(독점 전체화면은 제외).
 - 구현: `MapleDom.App.AlertOverlayWindow` + `Infrastructure.AlertOverlay`.
@@ -156,7 +156,7 @@ powershell -ExecutionPolicy Bypass -File tools\make-icon.ps1
 {
   "Minute": { "Name": "30초", "IntervalSeconds": 28, "GapSeconds": 2, "AutoStart": false,
     "Notification": { "Title": "30초 알림", "MainMessage": "30초 지났습니다. 움직이세요!",
-      "Sound": "Default", "Scenario": "Default", "ExpireSeconds": 10, "OverlayPosition": "BottomRight" } },
+      "Sound": "Default", "Scenario": "Default", "ExpireSeconds": 10, "ShowOverlay": true, "OverlayPosition": "BottomRight" } },
   "Rune":   { "Name": "룬",  "IntervalSeconds": 900,  "LeadSeconds": 0, "ReminderSeconds": 60, "AutoStart": false,
     "Notification": { "Title": "룬 타이머", "MainMessage": "룬 생성! 룬을 까고 [룬 깟음]을 누르세요.",
       "ReminderMessage": "룬 아직 안 깠어요! (+{overdue} 경과)", "Sound": "Reminder", "Scenario": "Reminder", "ExpireSeconds": 10 } },

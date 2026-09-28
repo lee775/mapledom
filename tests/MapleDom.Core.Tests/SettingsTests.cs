@@ -138,19 +138,21 @@ public class SettingsTests
     {
         var s = AppSettings.CreateDefault();
 
-        Assert.Equal(OverlayPosition.BottomRight, s.Minute.Notification.OverlayPosition);   // 30초는 우측 아래
-        Assert.Equal(OverlayPosition.Top, s.Rune.Notification.OverlayPosition);
-        Assert.Equal(OverlayPosition.Top, s.Doping.Notification.OverlayPosition);
+        Assert.True(s.Minute.Notification.ShowOverlay);                                     // 30초만 배너를 쓴다
+        Assert.Equal(OverlayPosition.BottomRight, s.Minute.Notification.OverlayPosition);   // 우측 아래
+        Assert.False(s.Rune.Notification.ShowOverlay);
+        Assert.False(s.Doping.Notification.ShowOverlay);
 
+        s.Rune.Notification.ShowOverlay = true;
         s.Rune.Notification.OverlayPosition = OverlayPosition.BottomLeft;
         var loaded = SettingsStore.Deserialize(SettingsStore.Serialize(s));
         Assert.Equal(OverlayPosition.BottomLeft, loaded.Rune.Notification.OverlayPosition);
         Assert.Equal(OverlayPosition.BottomRight, loaded.Minute.Notification.OverlayPosition);
 
         using var svc = new TimerService(loaded, Notifications.NullNotifier.Instance, new FakeClock());
-        var built = svc.SendTest(TimerService.MinuteId);
-        Assert.Equal(OverlayPosition.BottomRight, built.OverlayPosition);
+        Assert.Equal(OverlayPosition.BottomRight, svc.SendTest(TimerService.MinuteId).OverlayPosition);
         Assert.Equal(OverlayPosition.BottomLeft, svc.SendTest(TimerService.RuneId).OverlayPosition);
+        Assert.Null(svc.SendTest(TimerService.DopingId).OverlayPosition);                   // 배너 끔 → 위치 없음
     }
 
     [Fact]

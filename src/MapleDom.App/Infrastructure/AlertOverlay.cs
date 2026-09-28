@@ -37,10 +37,11 @@ public sealed class AlertOverlay : IDisposable
     {
         ArgumentNullException.ThrowIfNull(notification);
         if (_disposed || !_settings.Enabled || _dispatcher.HasShutdownStarted) return;
+        if (notification.OverlayPosition is not { } position) return;   // 이 타이머는 배너를 쓰지 않음
 
         _window ??= new AlertOverlayWindow();
         _window.SetAccent(notification.TimerId);
-        _window.ShowAlert(notification.Title, notification.Message, _settings, notification.OverlayPosition);
+        _window.ShowAlert(notification.Title, notification.Message, _settings, position);
 
         _hideTimer.Stop();
         _hideTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_settings.DurationSeconds, 0.5, 60));

@@ -197,7 +197,7 @@ public sealed class TimerService : IDisposable
             Sound: isReminder ? profile.ReminderSound : profile.Sound,
             Scenario: profile.Scenario,
             ExpireAfter: profile.ExpireSeconds > 0 ? Seconds(profile.ExpireSeconds) : null,
-            OverlayPosition: profile.OverlayPosition);
+            OverlayPosition: profile.ShowOverlay ? profile.OverlayPosition : null);
     }
 
     /// <summary>지정 타이머의 알림을 지금 보낸다(설정 화면의 "테스트 알림"). Muted와 무관하게 발송된다.</summary>

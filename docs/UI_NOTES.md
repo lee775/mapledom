@@ -146,3 +146,9 @@ dotnet run --project tools/MapleDom.App.Smoke -c Release -- artifacts/ui-smoke
 - `AlarmNotification` 에 `OverlayPosition` 이 추가돼(기본 Top) 알림 자체가 위치를 들고 다닌다. `TimerService.BuildNotification` 이 프로필 값을 실어 보내고 `AlertOverlay` 는 그대로 쓴다.
 - 기본값: 30초 = `BottomRight`(자주 울려 시야를 가리지 않게), 룬·도핑 = `Top`.
 - 설정 UI: 각 타이머 탭 맨 아래 "화면 알림 위치" 콤보. 알림·창 탭의 위치 콤보는 제거했다. [배너 미리보기]는 지금 열려 있는 타이머 탭의 위치로 띄운다.
+
+## 배너를 타이머별로 켜고 끄기 (2026-09-28, Claude)
+
+- `NotificationProfile.ShowOverlay`(기본 true)가 추가됐다. `AlarmNotification.OverlayPosition` 은 `OverlayPosition?` 이 되어 **null 이면 배너를 띄우지 않는다**. `TimerService` 가 `ShowOverlay ? Position : null` 로 채운다.
+- 기본값: 30초만 `ShowOverlay = true`(우측 아래). 룬·도핑은 false — 사용자가 "룬·도핑 크게 뜨는 거 없애 달라"고 요청.
+- 설정 UI: 각 타이머 탭에 "화면 알림 배너 표시" 체크박스, 그 아래 "배너 위치" 콤보(체크 해제 시 비활성).

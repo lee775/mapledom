@@ -42,7 +42,7 @@ public sealed record AlarmNotification(
     AlarmSound Sound,
     AlarmScenario Scenario,
     TimeSpan? ExpireAfter,
-    OverlayPosition OverlayPosition = OverlayPosition.Top);
+    OverlayPosition? OverlayPosition = null);
 
 /// <summary>알림 백엔드. Windows 토스트 구현은 MapleDom.Windows 프로젝트에 있다.</summary>
 public interface IAlarmNotifier

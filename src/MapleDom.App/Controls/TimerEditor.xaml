@@ -29,7 +29,8 @@
             <DockPanel Style="{StaticResource Field}" Visibility="{Binding IsAcknowledge, Converter={StaticResource BoolVisibility}}"><Label Content="리마인드 사운드" /><ComboBox ItemsSource="{x:Static vm:TimerSettingsEditor.Sounds}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding ReminderSound}" AutomationProperties.Name="리마인드 사운드" /></DockPanel>
             <DockPanel Style="{StaticResource Field}"><Label Content="표시 방식" /><ComboBox ItemsSource="{x:Static vm:TimerSettingsEditor.Scenarios}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding Scenario}" AutomationProperties.Name="표시 방식" /></DockPanel>
             <DockPanel Style="{StaticResource Field}"><Label Content="유지 시간 (초)" /><TextBox Text="{Binding Expire, UpdateSourceTrigger=PropertyChanged}" ToolTip="알림 센터 유지 시간. 0 이하는 만료 없음" AutomationProperties.Name="유지 시간 (초)" /></DockPanel>
-            <DockPanel Style="{StaticResource Field}"><Label Content="화면 알림 위치" ToolTip="이 타이머의 화면 배너가 뜨는 자리" /><ComboBox ItemsSource="{x:Static vm:OverlayEditor.Positions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding OverlayPosition}" AutomationProperties.Name="화면 알림 위치" /></DockPanel>
+            <CheckBox x:Name="OverlayCheck" Content="화면 알림 배너 표시" IsChecked="{Binding ShowOverlay}" Margin="144,3,0,8" ToolTip="이 타이머가 울릴 때 화면에 큰 배너를 띄웁니다" />
+            <DockPanel Style="{StaticResource Field}" IsEnabled="{Binding IsChecked, ElementName=OverlayCheck}"><Label Content="배너 위치" ToolTip="이 타이머의 화면 배너가 뜨는 자리" /><ComboBox ItemsSource="{x:Static vm:OverlayEditor.Positions}" DisplayMemberPath="Label" SelectedValuePath="Value" SelectedValue="{Binding OverlayPosition}" AutomationProperties.Name="배너 위치" /></DockPanel>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

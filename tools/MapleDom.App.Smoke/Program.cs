@@ -185,12 +185,12 @@ internal static partial class Program
         var telegram = dialog.ViewModel.Telegram;
         Check(!telegram.Enabled && telegram.SendRune && telegram.SendDoping && !telegram.SendMinute, "Telegram tab starts off with rune and doping selected");
         var overlay = dialog.ViewModel.Overlay;
-        Check(overlay.Enabled && dialog.ViewModel.Minute.OverlayPosition == MapleDom.Core.Settings.OverlayPosition.BottomRight && dialog.ViewModel.Rune.OverlayPosition == MapleDom.Core.Settings.OverlayPosition.Top, "Overlay is on by default; 30s banner sits bottom-right, rune on top");
+        Check(overlay.Enabled && dialog.ViewModel.Minute.ShowOverlay && dialog.ViewModel.Minute.OverlayPosition == MapleDom.Core.Settings.OverlayPosition.BottomRight && !dialog.ViewModel.Rune.ShowOverlay && !dialog.ViewModel.Doping.ShowOverlay, "Only the 30s timer shows a banner, at bottom-right");
         overlay.Duration = "0";
         Check(!dialog.ViewModel.TryBuild(out _, out _) && dialog.ViewModel.Errors.Any(e => e.Contains("표시 시간")), "Overlay rejects a zero duration");
         overlay.Duration = "3";
         dialog.ViewModel.Minute.OverlayPosition = MapleDom.Core.Settings.OverlayPosition.BottomLeft;
-        Check(dialog.ViewModel.TryBuild(out var withOverlay, out _) && withOverlay.Overlay.DurationSeconds == 3 && withOverlay.Minute.Notification.OverlayPosition == MapleDom.Core.Settings.OverlayPosition.BottomLeft, "Overlay duration and per-timer position build from the tabs");
+        Check(dialog.ViewModel.TryBuild(out var withOverlay, out _) && withOverlay.Overlay.DurationSeconds == 3 && withOverlay.Minute.Notification.OverlayPosition == MapleDom.Core.Settings.OverlayPosition.BottomLeft && !withOverlay.Rune.Notification.ShowOverlay, "Overlay duration and per-timer position build from the tabs");
         overlay.Duration = "4";
         dialog.ViewModel.Minute.OverlayPosition = MapleDom.Core.Settings.OverlayPosition.BottomRight;
         telegram.Enabled = true;

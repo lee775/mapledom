@@ -22,6 +22,9 @@ public sealed class NotificationProfile
     /// <summary>알림 센터에 남는 시간(초). 0 이하면 만료 없음.</summary>
     public double ExpireSeconds { get; set; } = 10;
 
+    /// <summary>이 타이머가 울릴 때 화면 알림 배너를 띄울지.</summary>
+    public bool ShowOverlay { get; set; } = true;
+
     /// <summary>이 타이머의 화면 알림 배너가 뜨는 위치.</summary>
     public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.Top;
 }
@@ -338,6 +341,7 @@ public static class SettingsDefaults
             ReminderSound = AlarmSound.Reminder,
             Scenario = AlarmScenario.Reminder,
             ExpireSeconds = 10,
+            ShowOverlay = false,
         },
     };
 
@@ -357,6 +361,7 @@ public static class SettingsDefaults
             ReminderSound = AlarmSound.Reminder,
             Scenario = AlarmScenario.Reminder,
             ExpireSeconds = 10,
+            ShowOverlay = false,
         },
     };
 }

@@ -28,6 +28,7 @@ public sealed class TimerSettingsEditor
     public AlarmSound ReminderSound { get; set; }
     public AlarmScenario Scenario { get; set; }
     public string Expire { get; set; } = "";
+    public bool ShowOverlay { get; set; } = true;
     public OverlayPosition OverlayPosition { get; set; } = OverlayPosition.Top;
 
     public static IReadOnlyList<Choice<AlarmSound>> Sounds { get; } =
@@ -55,6 +56,7 @@ public sealed class TimerSettingsEditor
         editor.ReminderSound = profile.ReminderSound;
         editor.Scenario = profile.Scenario;
         editor.Expire = Format(profile.ExpireSeconds);
+        editor.ShowOverlay = profile.ShowOverlay;
         editor.OverlayPosition = profile.OverlayPosition;
         return editor;
     }
@@ -90,6 +92,7 @@ public sealed class TimerSettingsEditor
             Title = Title, MainMessage = MainMessage, ReminderMessage = ReminderMessage,
             Sound = Sound, ReminderSound = ReminderSound, Scenario = Scenario,
             ExpireSeconds = Number(Expire, $"{Name}: 유지 시간", errors, allowNegative: true),
+            ShowOverlay = ShowOverlay,
             OverlayPosition = Enum.IsDefined(OverlayPosition) ? OverlayPosition : OverlayPosition.Top,
         };
     }
