@@ -3,6 +3,21 @@
 메이플스토리용 초경량 타이머/창 관리 도구. **320×300 WPF 창**에 **창 순서(Z-order) 적용/해제** 카드와 30초·룬·도핑 타이머 카드가 있고, 알림은 Windows 토스트·화면 배너·텔레그램으로 온다.
 UI 사용법과 검증 범위는 [`docs/UI_NOTES.md`](docs/UI_NOTES.md)를 참고한다.
 
+## 다운로드 · 실행
+
+설치 과정이 없다. exe 파일 하나만 받아서 실행하면 된다.
+
+1. **[MapleDom.exe 내려받기](https://github.com/lee775/mapledom/releases/latest/download/MapleDom.exe)** (약 171MB). .NET 런타임이 들어 있어서 따로 설치할 것이 없다.
+2. 원하는 폴더에 두고 더블클릭한다.
+3. "Windows의 PC 보호" 창이 뜨면 **추가 정보 → 실행**을 누른다. 서명하지 않은 exe라서 뜨는 경고다.
+4. 사용자 계정 컨트롤(UAC) 창에서 **예**를 누른다. 관리자 권한으로 도는 게임 창의 순서를 바꾸려면 MapleDom도 관리자 권한이어야 한다.
+
+- 요구 사항: Windows 10 1809 이상, 64비트.
+- 버전별 변경 내용과 이전 버전은 [Releases](https://github.com/lee775/mapledom/releases)에 있다. 새 버전은 exe를 다시 받아 덮어쓰면 되고 설정은 유지된다.
+- 지우려면 exe를 삭제한다. 설정까지 지우려면 `%LocalAppData%\MapleDom` 폴더와 `%TEMP%\.net\MapleDom` 폴더도 삭제한다.
+- MapleDom은 타이머 알림을 띄우고 창의 앞뒤 순서를 바꾸기만 한다. 게임에 키 입력을 보내거나 게임 메모리를 읽지 않는다.
+- 개인이 만든 비공식 도구다. 넥슨·메이플스토리와 관련이 없고, 사용에 따른 책임은 사용자에게 있다.
+
 ## 타이머 3종
 
 | 타이머 | 종류 | 기본값 | 동작 |
@@ -83,7 +98,7 @@ src/
   MapleDom.Windows/     WindowsToastNotifier(토스트), WindowArranger/ForegroundWatcher/WindowOrderKeeper(창 순서, Win32)
   MapleDom.Cli/         콘솔 검증 도구
 tests/
-  MapleDom.Core.Tests/  xunit 101개
+  MapleDom.Core.Tests/  xunit 103개
 docs/
   UI_PROMPT.md          최초 UI 구현 때 Codex에게 준 프롬프트(이력)
   UI_NOTES.md           UI 사용법, 구현 결정, 검증 결과
